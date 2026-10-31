@@ -28,6 +28,15 @@ export const ART = {
     alt: 'A grinning chrome robot with glowing red eyes peers through yellow office blinds, holding a clipboard with an empty checklist.',
     quality: { avif: 50, webp: 68 },
   },
+  battleExecutioner: {
+    name: 'index-battle-executioner',
+    original: 'index-battle-executioner.png',
+    width: 640,
+    height: 960,
+    widths: [320, 640],
+    alt: 'Comic-book illustration: a giant chrome robot referee with glowing red eyes stands in a boxing ring between the blue and red corners, one hand raised to stop the fight, the other holding up a pink slip.',
+    quality: { avif: 50, webp: 68 },
+  },
 } satisfies Record<string, ArtPiece>;
 
 export function artSrc(piece: ArtPiece, width: number, format: 'avif' | 'webp'): string {

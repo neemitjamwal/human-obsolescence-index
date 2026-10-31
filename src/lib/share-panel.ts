@@ -1,14 +1,29 @@
 import { CARD_SIZES, cardAlt, cardFileName, cardText, drawCard, loadCardArt, loadCardFonts, type CardKind } from './card';
 import { sharePath, type VerdictView } from './verdict-view';
 
-type State = { view: VerdictView; url: string; drawn: Promise<void> };
+/** Anything a share panel can print: two canvas cards, a link and the share-sheet text. */
+export type ShareSubject = {
+  /** Written to data-cards once both cards are drawn. */
+  key: string;
+  url: string;
+  title: string;
+  text: string;
+  /** Every string the cards print, so the fonts are loaded for exactly that text. */
+  sample: string;
+  fileName: (kind: CardKind) => string;
+  alt: (kind: CardKind) => string;
+  /** Loads the card art, then returns the drawer plus a short description of the art that loaded. */
+  prepare: () => Promise<{ draw: (canvas: HTMLCanvasElement, kind: CardKind) => void; art: string }>;
+};
+
+type State = { subject: ShareSubject; drawn: Promise<void> };
 
 function toBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('canvas export failed'))), 'image/png'));
 }
 
-/** Wires a SharePanel: draws both cards for the current verdict and runs Download / Share / Copy link. */
-export function createSharePanel(root: HTMLElement) {
+/** Wires a SharePanel for any subject: draws both cards and runs Download / Share / Copy link. */
+export function createShareCore(root: HTMLElement) {
   const canvases: Record<CardKind, HTMLCanvasElement | null> = {
     story: root.querySelector('canvas[data-card="story"]'),
     post: root.querySelector('canvas[data-card="post"]'),
@@ -21,35 +36,33 @@ export function createSharePanel(root: HTMLElement) {
     if (status) status.textContent = msg;
   };
 
-  async function draw(view: VerdictView) {
-    const sample = Object.values(cardText(view)).join(' ');
-    const [fontsLoaded, art] = await Promise.all([loadCardFonts(sample), loadCardArt()]);
-    if (state?.view !== view) return;
+  async function draw(subject: ShareSubject) {
+    const [fontsLoaded, prepared] = await Promise.all([loadCardFonts(subject.sample), subject.prepare()]);
+    if (state?.subject !== subject) return;
     root.dataset.fonts = fontsLoaded ? 'loaded' : 'fallback';
-    root.dataset.art = `${art.photo ? 'photo' : 'no-photo'}+${Object.keys(art.robots).length}-robots`;
+    root.dataset.art = prepared.art;
     for (const kind of ['story', 'post'] as const) {
       const canvas = canvases[kind];
       if (!canvas) continue;
-      drawCard(canvas, kind, view, art);
-      canvas.setAttribute('aria-label', cardAlt(view, kind));
+      prepared.draw(canvas, kind);
+      canvas.setAttribute('aria-label', subject.alt(kind));
     }
-    root.dataset.cards = `${view.slug}|${view.headline}`;
+    root.dataset.cards = subject.key;
   }
 
-  function show(view: VerdictView, name: string) {
-    const url = new URL(sharePath(view.slug, name), location.origin).href;
-    if (urlInput) urlInput.value = url;
-    root.dataset.shareUrl = url;
-    const next: State = { view, url, drawn: Promise.resolve() };
+  function show(subject: ShareSubject) {
+    if (urlInput) urlInput.value = subject.url;
+    root.dataset.shareUrl = subject.url;
+    const next: State = { subject, drawn: Promise.resolve() };
     state = next;
-    next.drawn = draw(view);
+    next.drawn = draw(subject);
     return next.drawn;
   }
 
   async function copyLink(): Promise<boolean> {
     if (!state) return false;
     try {
-      await navigator.clipboard.writeText(state.url);
+      await navigator.clipboard.writeText(state.subject.url);
       return true;
     } catch {
       if (!urlInput) return false;
@@ -75,7 +88,7 @@ export function createSharePanel(root: HTMLElement) {
         const href = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = href;
-        a.download = cardFileName(state.view.slug, kind);
+        a.download = state.subject.fileName(kind);
         document.body.append(a);
         a.click();
         a.remove();
@@ -90,20 +103,20 @@ export function createSharePanel(root: HTMLElement) {
 
   root.querySelector<HTMLButtonElement>('[data-share-copy]')?.addEventListener('click', async () => {
     if (!state) return;
-    say((await copyLink()) ? `Link copied: ${state.url}` : `Copy this link from the box above: ${state.url}`);
+    say((await copyLink()) ? `Link copied: ${state.subject.url}` : `Copy this link from the box above: ${state.subject.url}`);
   });
 
   root.querySelector<HTMLButtonElement>('[data-share-native]')?.addEventListener('click', async () => {
     if (!state) return;
-    const { view, url } = state;
-    const data: ShareData = { title: `${view.title}: Doom Score ${view.score}/100`, text: `${view.headline}. ${view.roast}`, url };
+    const { subject } = state;
+    const data: ShareData = { title: subject.title, text: subject.text, url: subject.url };
     try {
       if (typeof navigator.share === 'function') {
         await state.drawn;
         const canvas = canvases.story;
         let files: File[] | null = null;
         if (canvas && typeof navigator.canShare === 'function') {
-          const file = new File([await toBlob(canvas)], cardFileName(view.slug, 'story'), { type: 'image/png' });
+          const file = new File([await toBlob(canvas)], subject.fileName('story'), { type: 'image/png' });
           if (navigator.canShare({ files: [file] })) files = [file];
         }
         root.dataset.sharePath = files ? 'native-files' : 'native-link';
@@ -120,10 +133,34 @@ export function createSharePanel(root: HTMLElement) {
     root.dataset.sharePath = 'fallback';
     say(
       (await copyLink())
-        ? `This browser has no share sheet, so we copied the link instead: ${url}`
-        : `This browser has no share sheet. Copy this link from the box above: ${url}`,
+        ? `This browser has no share sheet, so we copied the link instead: ${subject.url}`
+        : `This browser has no share sheet. Copy this link from the box above: ${subject.url}`,
     );
   });
 
+  return { show };
+}
+
+/** A SharePanel for one verdict (home reveal and /v/ pages). */
+export function createSharePanel(root: HTMLElement) {
+  const core = createShareCore(root);
+  function show(view: VerdictView, name: string) {
+    return core.show({
+      key: `${view.slug}|${view.headline}`,
+      url: new URL(sharePath(view.slug, name), location.origin).href,
+      title: `${view.title}: Doom Score ${view.score}/100`,
+      text: `${view.headline}. ${view.roast}`,
+      sample: Object.values(cardText(view)).join(' '),
+      fileName: (kind) => cardFileName(view.slug, kind),
+      alt: (kind) => cardAlt(view, kind),
+      prepare: async () => {
+        const art = await loadCardArt();
+        return {
+          draw: (canvas, kind) => drawCard(canvas, kind, view, art),
+          art: `${art.photo ? 'photo' : 'no-photo'}+${Object.keys(art.robots).length}-robots`,
+        };
+      },
+    });
+  }
   return { show };
 }

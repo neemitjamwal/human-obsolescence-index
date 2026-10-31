@@ -1,0 +1,97 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BattleResult from '../../components/BattleResult.astro';
+import FightCard from '../../components/FightCard.astro';
+import SharePanel from '../../components/SharePanel.astro';
+import { CURATED_BATTLES, FEATURED } from '../../lib/battle-data';
+import { VERDICTS_META } from '../../lib/verdicts';
+
+const u = VERDICTS_META;
+---
+
+<BaseLayout
+  title="Who's safer? Job vs job battle"
+  description={`Pick two of ${u.count} scored occupations and start a fight: the lower Doom Score is the safer job, and the robot referee hands the other corner a pink slip. Real data from AI exposure research and BLS projections.`}
+  image={FEATURED.og}
+  imageAlt={`Daily Doom battle card: ${FEATURED.view.a.title} vs ${FEATURED.view.b.title}`}
+>
+  <div data-battle-page>
+    <section class="mx-auto max-w-6xl px-4 pt-8 md:px-6" aria-labelledby="vs-title">
+      <p class="eyebrow eyebrow-red">Fight night · Robot referee on duty</p>
+      <h1 id="vs-title" class="page-h mt-3">Who's <span class="hl">safer?</span></h1>
+      <p class="hero-dek mt-3"><span>Pick two jobs. Start a fight. The lower Doom Score wins, and the robot referee hands the other corner a pink slip.</span></p>
+
+      <form class="battle-form box-ink mt-5" aria-label="Pick two jobs for the fight" data-battle-form novalidate>
+        <div class="battle-corners">
+          <div class="corner corner-red">
+            <label class="corner-label" for="vs-a">Red corner</label>
+            <div class="job-combo">
+              <input
+                id="vs-a"
+                class="job-input"
+                type="text"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls="vs-a-list"
+                aria-describedby="vs-hint"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                placeholder="e.g. lawyer"
+                data-battle-input="a"
+              />
+              <ul id="vs-a-list" class="job-list" role="listbox" aria-label="Matching jobs for the red corner" hidden data-battle-list="a"></ul>
+            </div>
+          </div>
+          <p class="vs corner-vs" aria-hidden="true">VS</p>
+          <div class="corner corner-blue">
+            <label class="corner-label" for="vs-b">Blue corner</label>
+            <div class="job-combo">
+              <input
+                id="vs-b"
+                class="job-input"
+                type="text"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls="vs-b-list"
+                aria-describedby="vs-hint"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                placeholder="e.g. plumber"
+                data-battle-input="b"
+              />
+              <ul id="vs-b-list" class="job-list" role="listbox" aria-label="Matching jobs for the blue corner" hidden data-battle-list="b"></ul>
+            </div>
+          </div>
+        </div>
+        <div class="battle-go-row mt-4">
+          <button type="submit" class="btn btn-yellow battle-go">Start the fight</button>
+          <p id="vs-hint" class="fine">{u.count} scored occupations, same matching as the front page. Arrow keys choose, Enter picks.</p>
+        </div>
+        <p class="sr-only" role="status" aria-live="polite" data-battle-status></p>
+      </form>
+    </section>
+
+    <section class="mx-auto max-w-6xl px-4 pt-8 md:px-6" aria-label="The fight" hidden data-battle-zone>
+      <BattleResult view={FEATURED.view} fighters={FEATURED.fighters} edition={u.edition} idPrefix="vs" />
+      <div class="mt-8"><SharePanel title="Post the fight" idPrefix="vs-share" /></div>
+    </section>
+  </div>
+
+  <section class="mx-auto mt-12 max-w-6xl border-t-[6px] border-double border-ink px-4 pt-8 md:px-6" aria-labelledby="card-title">
+    <h2 id="card-title" class="section-h">Tonight's <span class="hl-red">fight card</span></h2>
+    <p class="prose-block mt-3 font-bold">{CURATED_BATTLES.length} matchups the robots already scored. Each one has its own page and share card.</p>
+    <div class="mt-5"><FightCard battles={CURATED_BATTLES} label={`${CURATED_BATTLES.length} curated battles`} /></div>
+    <p class="fine mt-4">AI exposure ≠ job loss. "Safer" only means a lower Doom Score. <a href="/methodology/" class="font-bold">How we score it</a></p>
+  </section>
+</BaseLayout>
+
+<script>
+  import { initBattlePage } from '../../lib/battle-page';
+
+  const page = document.querySelector<HTMLElement>('[data-battle-page]');
+  if (page) initBattlePage(page);
+</script>

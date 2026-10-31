@@ -49,6 +49,15 @@ const SOURCE_FILES = [
   'src/components/VerdictPanel.astro',
   'src/components/SharePanel.astro',
   'src/pages/v/[slug].astro',
+  'src/data/battles.ts',
+  'src/lib/battle.ts',
+  'src/lib/battle-card.ts',
+  'src/lib/battle-dom.ts',
+  'src/lib/battle-page.ts',
+  'src/components/BattleResult.astro',
+  'src/components/FightCard.astro',
+  'src/pages/vs/index.astro',
+  'src/pages/vs/[pair].astro',
 ];
 
 const plain = (html: string) =>

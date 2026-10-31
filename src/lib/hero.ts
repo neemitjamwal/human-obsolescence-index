@@ -1,3 +1,4 @@
+import { createJobCombobox } from './job-combobox';
 import { createMatcher, type Matcher, type SearchIndex, type Suggestion } from './match';
 import { sanitizeName } from './name';
 import { createSharePanel } from './share-panel';
@@ -6,17 +7,15 @@ import { verdictView, type VerdictFeed, type VerdictRecord } from './verdict-vie
 
 type Data = { matcher: Matcher; feed: VerdictFeed; bySlug: Map<string, VerdictRecord> };
 
-const MIN_QUERY = 2;
-
-async function fetchJson<T>(path: string): Promise<T> {
+export async function fetchJson<T>(path: string): Promise<T> {
   const res = await fetch(path, { credentials: 'same-origin' });
   if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
   return res.json() as Promise<T>;
 }
 
 /**
- * The "Type your job" combobox (ARIA 1.2 combobox with a listbox popup), the optional name field, the reveal and the
- * share panel. The search index and the verdict feed are fetched on first focus or keystroke, never on page load.
+ * The "Type your job" combobox, the optional name field, the reveal and the share panel. The search index and the
+ * verdict feed are fetched on first focus or keystroke, never on page load.
  */
 export function initHero(root: HTMLElement) {
   const form = root.querySelector<HTMLFormElement>('[data-job-form]')!;
@@ -31,16 +30,8 @@ export function initHero(root: HTMLElement) {
   const share = createSharePanel(zone.querySelector<HTMLElement>('[data-share-panel]')!);
 
   let data: Promise<Data> | null = null;
-  let options: Suggestion[] = [];
-  let active = -1;
   let current: VerdictRecord | null = null;
   let nameTimer: ReturnType<typeof setTimeout> | undefined;
-
-  const say = (msg: string) => {
-    // Clearing first makes screen readers announce a repeated message again.
-    status.textContent = '';
-    requestAnimationFrame(() => (status.textContent = msg));
-  };
 
   function load(): Promise<Data> {
     data ??= Promise.all([fetchJson<SearchIndex>('/data/search-index.json'), fetchJson<VerdictFeed>('/data/verdicts.json')])
@@ -51,81 +42,10 @@ export function initHero(root: HTMLElement) {
       .catch((err) => {
         data = null;
         root.dataset.searchReady = 'error';
-        say('The search files did not load. Check your connection and try again, or browse the full leaderboard.');
+        combo.say('The search files did not load. Check your connection and try again, or browse the full leaderboard.');
         throw err;
       });
     return data;
-  }
-
-  function setOpen(open: boolean) {
-    list.hidden = !open;
-    input.setAttribute('aria-expanded', String(open));
-    if (!open) setActive(-1);
-  }
-
-  function setActive(i: number) {
-    active = i;
-    list.querySelectorAll<HTMLElement>('[role="option"]').forEach((el, j) => {
-      el.setAttribute('aria-selected', String(j === i));
-      el.classList.toggle('is-active', j === i);
-    });
-    if (i >= 0 && options[i]) {
-      input.setAttribute('aria-activedescendant', `job-opt-${i}`);
-      list.querySelector<HTMLElement>(`#job-opt-${i}`)?.scrollIntoView({ block: 'nearest' });
-    } else input.removeAttribute('aria-activedescendant');
-  }
-
-  function optionLabel(s: Suggestion): string {
-    return `${s.title}, Doom Score ${s.obs}${s.kind !== 'title' ? `, matched ${s.matched}` : ''}`;
-  }
-
-  function renderOptions(items: Suggestion[]) {
-    options = items;
-    const nodes = items.map((s, i) => {
-      const li = document.createElement('li');
-      li.id = `job-opt-${i}`;
-      li.setAttribute('role', 'option');
-      li.setAttribute('aria-selected', 'false');
-      li.setAttribute('aria-label', optionLabel(s));
-      li.className = 'job-opt';
-      const title = document.createElement('span');
-      title.className = 'job-opt-title';
-      title.textContent = s.title;
-      li.append(title);
-      if (s.kind !== 'title') {
-        const via = document.createElement('span');
-        via.className = 'job-opt-via';
-        via.textContent = s.note ? `“${s.matched}”: ${s.note}` : `also called “${s.matched}”`;
-        li.append(via);
-      }
-      const score = document.createElement('span');
-      score.className = 'job-opt-score';
-      score.textContent = String(s.obs);
-      li.append(score);
-      li.addEventListener('mousedown', (e) => e.preventDefault());
-      li.addEventListener('click', () => choose(s));
-      return li;
-    });
-    list.replaceChildren(...nodes);
-  }
-
-  async function update() {
-    const q = input.value.trim();
-    if (q.length < MIN_QUERY) {
-      renderOptions([]);
-      setOpen(false);
-      return;
-    }
-    const { matcher } = await load();
-    if (input.value.trim() !== q) return;
-    const items = matcher(q);
-    renderOptions(items);
-    setOpen(items.length > 0);
-    say(
-      items.length
-        ? `${items.length} ${items.length === 1 ? 'job matches' : 'jobs match'}. Use the up and down arrows to choose, then press Enter.`
-        : `No match for “${q}”. Press Enter to see the closest jobs we have.`,
-    );
   }
 
   function looseSuggestions(matcher: Matcher, q: string): Suggestion[] {
@@ -163,15 +83,14 @@ export function initHero(root: HTMLElement) {
         return li;
       }),
     );
-    say(`No job called “${q}” in our files. ${near.length ? `${near.length} closest titles listed below the search box.` : 'Try another word.'}`);
+    combo.say(`No job called “${q}” in our files. ${near.length ? `${near.length} closest titles listed below the search box.` : 'Try another word.'}`);
   }
 
   async function choose(s: Suggestion) {
     const { feed, bySlug } = await load();
     const record = bySlug.get(s.slug);
     if (!record) return;
-    input.value = s.title;
-    setOpen(false);
+    combo.select(s.title);
     current = record;
     noMatch.hidden = true;
     zone.hidden = false;
@@ -181,55 +100,28 @@ export function initHero(root: HTMLElement) {
     const view = verdictView(record, feed, name);
     fillVerdict(panel, view, record);
     panel.scrollIntoView({ block: 'start', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
-    say(`Verdict: ${view.title}. Doom Score ${view.score} out of 100, ${view.bandLabel}. ${view.headline}. The share buttons follow the verdict.`);
+    combo.say(`Verdict: ${view.title}. Doom Score ${view.score} out of 100, ${view.bandLabel}. ${view.headline}. The share buttons follow the verdict.`);
     const shown = share.show(view, name);
     await reveal(panel);
     await shown;
   }
 
-  async function submit() {
-    const q = input.value.trim();
-    if (q.length < MIN_QUERY) {
-      say('Type at least two letters of your job title.');
-      input.focus();
-      return;
-    }
-    const { matcher } = await load();
-    const pick = active >= 0 ? options[active] : matcher(q)[0];
-    if (pick) await choose(pick);
-    else showNoMatch(q, looseSuggestions(matcher, q));
-  }
-
-  input.addEventListener('focus', () => void load().catch(() => {}), { once: true });
-  input.addEventListener('input', () => void update().catch(() => {}));
-  input.addEventListener('keydown', (e) => {
-    const open = !list.hidden && options.length > 0;
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      if (!options.length) return;
-      e.preventDefault();
-      if (!open) setOpen(true);
-      const step = e.key === 'ArrowDown' ? 1 : -1;
-      const next = active < 0 ? (step === 1 ? 0 : options.length - 1) : (active + step + options.length) % options.length;
-      setActive(next);
-      say(`${optionLabel(options[next])}. ${next + 1} of ${options.length}.`);
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      void submit().catch(() => {});
-    } else if (e.key === 'Escape') {
-      if (open) {
-        e.preventDefault();
-        setOpen(false);
-      } else if (input.value) {
-        e.preventDefault();
-        input.value = '';
-        renderOptions([]);
-      }
-    } else if (e.key === 'Tab') setOpen(false);
+  const combo = createJobCombobox({
+    input,
+    list,
+    status,
+    idPrefix: 'job-opt',
+    load: () => load().then((d) => d.matcher),
+    onChoose: choose,
+    onSubmit: async (q, pick, matcher) => {
+      if (pick) await choose(pick);
+      else showNoMatch(q, looseSuggestions(matcher, q));
+    },
   });
-  input.addEventListener('blur', () => setTimeout(() => setOpen(false), 120));
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    void submit().catch(() => {});
+    void combo.submit().catch(() => {});
   });
 
   nameInput.addEventListener('input', () => {

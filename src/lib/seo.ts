@@ -1,11 +1,12 @@
 import { OCCUPATIONS, occupationPath, type Occupation } from './data';
 import { formatSignedPercent } from './format';
+import { CURATED_BATTLES } from './battle-data';
 import { VERDICTS, verdictPath, type Verdict } from './verdicts';
 
 export const DEFAULT_OG_IMAGE = '/og/index.png';
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 } as const;
 
-export const STATIC_PATHS = ['/', '/leaderboard/', '/methodology/', '/press/', '/changelog/', '/about/', '/embed/'];
+export const STATIC_PATHS = ['/', '/leaderboard/', '/vs/', '/methodology/', '/press/', '/changelog/', '/about/', '/embed/'];
 
 export function ogImagePath(slug: string): string {
   return `/og/${slug}.png`;
@@ -34,7 +35,12 @@ export function verdictImageAlt(v: Verdict): string {
 
 /** Every page in the built site, as root-relative paths with trailing slashes. */
 export function sitePaths(): string[] {
-  return [...STATIC_PATHS, ...OCCUPATIONS.map((o) => occupationPath(o.slug)), ...VERDICTS.map((v) => verdictPath(v.slug))];
+  return [
+    ...STATIC_PATHS,
+    ...OCCUPATIONS.map((o) => occupationPath(o.slug)),
+    ...VERDICTS.map((v) => verdictPath(v.slug)),
+    ...CURATED_BATTLES.map((b) => b.path),
+  ];
 }
 
 export function sitemapXml(site: URL, lastmod?: string): string {

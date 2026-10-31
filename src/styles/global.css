@@ -247,7 +247,8 @@
   }
 
   .box-ink a { color: var(--color-yellow); }
-  .box-ink a.btn-yellow { color: var(--color-ink); }
+  .box-ink a.btn-yellow,
+  .box-ink a.btn:not(.btn-red) { color: var(--color-ink); }
 
   /* ---------- Buttons ---------- */
   .btn {
@@ -980,4 +981,274 @@
 @keyframes eye-glow {
   0%, 100% { fill-opacity: 0.25; }
   50% { fill-opacity: 0.7; }
+}
+
+/* ---------- Who's safer? battle, fight card, hall of shame ---------- */
+@layer components {
+  .battle-k {
+    margin: 0;
+    font: 900 0.8125rem/1.2 var(--font-body);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-yellow);
+  }
+
+  .battle-result,
+  .battle-teaser,
+  .battle-form { position: relative; overflow: hidden; padding: 1rem; }
+  @media (min-width: 48rem) {
+    .battle-result,
+    .battle-teaser,
+    .battle-form { padding: 1.5rem; }
+  }
+
+  .battle-verdict {
+    margin: 0;
+    font: 400 clamp(2rem, 8.5vw, 4rem)/1 var(--font-display);
+    text-transform: uppercase;
+    color: var(--color-yellow);
+    overflow-wrap: anywhere;
+  }
+
+  .battle-scoreline { color: var(--color-white); }
+
+  .battle-ring {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "a b" "ref ref";
+    gap: 1.25rem 0.9rem;
+    align-items: start;
+  }
+  @media (min-width: 56rem) {
+    .battle-ring { grid-template-columns: minmax(0, 1fr) 15rem minmax(0, 1fr); grid-template-areas: "a ref b"; }
+  }
+
+  .fighter {
+    position: relative;
+    display: block;
+    min-width: 0;
+    padding: 0.9rem 0.6rem 1rem;
+    text-align: center;
+    color: var(--color-white);
+    border: 3px solid var(--color-white);
+    box-shadow: 6px 6px 0 var(--color-ink);
+    text-decoration: none;
+  }
+  .fighter-a { grid-area: a; }
+  .fighter-b { grid-area: b; }
+  .fighter-red { background: var(--color-red); transform: rotate(-2deg); }
+  .fighter-blue { background: var(--color-blue); transform: rotate(2deg); }
+  .fighter p { margin: 0; }
+  .fighter a, a.fighter, a.fighter:hover { color: var(--color-white); }
+  .fighter a { text-decoration-color: var(--color-yellow); }
+  .fighter[data-fate='safer'] { outline: 5px solid var(--color-yellow); outline-offset: 4px; }
+
+  .fighter-corner { font: 900 0.6875rem/1.2 var(--font-body); letter-spacing: 0.14em; text-transform: uppercase; }
+  .fighter-n { display: block; font: 400 clamp(4rem, 17vw, 7rem)/0.9 var(--font-display); text-shadow: 4px 4px 0 var(--color-ink); }
+  .fighter-of { font: 900 0.625rem/1.2 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; }
+  .fighter-t {
+    display: block;
+    margin-top: 0.4rem;
+    font: 900 0.8125rem/1.15 var(--font-body);
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+  @media (min-width: 48rem) { .fighter-t { font-size: 1rem; } }
+  .fighter-stat { margin-top: 0.4rem; font: 700 0.75rem/1.25 var(--font-body); }
+
+  .fighter-tag {
+    display: inline-block;
+    margin-top: 0.6rem;
+    padding: 0.15rem 0.6rem;
+    background: var(--color-yellow);
+    color: var(--color-ink);
+    border: 3px solid var(--color-ink);
+    font: 400 1.5rem/1.1 var(--font-display);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transform: rotate(-4deg);
+  }
+  .fighter[data-fate='even'] .fighter-tag { background: var(--color-white); }
+
+  .pink-slip {
+    display: grid;
+    grid-template-columns: 3.4rem minmax(0, 1fr);
+    gap: 0.35rem;
+    align-items: center;
+    margin: 0.75rem -0.2rem -0.3rem;
+    padding: 0.4rem 0.5rem;
+    background: #ff8fb1;
+    color: var(--color-ink);
+    border: 3px solid var(--color-ink);
+    box-shadow: 4px 4px 0 var(--color-ink);
+    transform: rotate(6deg);
+    text-align: left;
+  }
+  .pink-slip[hidden] { display: none; }
+  .pink-slip-robot { width: 100%; height: auto; }
+  .pink-slip-form { display: grid; gap: 0.1rem; margin: 0; }
+  .pink-slip-label { font: 400 clamp(1.15rem, 5vw, 1.75rem)/1 var(--font-display); letter-spacing: 0.05em; text-transform: uppercase; }
+  .pink-slip-from { font: 900 0.625rem/1.2 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .vs {
+    margin: 0;
+    width: 4rem;
+    height: 4rem;
+    display: grid;
+    place-content: center;
+    border-radius: 50%;
+    background: var(--color-yellow);
+    color: var(--color-ink);
+    border: 3px solid var(--color-white);
+    font: 400 2.25rem/1 var(--font-display);
+  }
+
+  .battle-ring > .vs {
+    position: absolute;
+    z-index: 3;
+    left: 50%;
+    top: 2.5rem;
+    transform: translateX(-50%);
+    width: 3.25rem;
+    height: 3.25rem;
+    font-size: 1.75rem;
+  }
+  @media (min-width: 56rem) { .battle-ring > .vs { top: -0.5rem; width: 4rem; height: 4rem; font-size: 2.25rem; } }
+
+  .referee {
+    grid-area: ref;
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 0.9rem;
+    align-items: center;
+    margin: 0;
+  }
+  @media (min-width: 56rem) { .referee { grid-template-columns: minmax(0, 1fr); padding-top: 3.25rem; } }
+  .referee img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 4px solid var(--color-white);
+    box-shadow: 6px 6px 0 var(--color-red);
+    background: var(--color-paper);
+  }
+  .referee .bubble { color: var(--color-ink); }
+
+  .box-ink .battle-quip { color: var(--color-white); font-size: clamp(1.3rem, 5vw, 1.85rem); }
+  .battle-sub { margin: 0; font: 700 0.9375rem/1.4 var(--font-body); }
+  .box-ink .fine { color: #e8e4d6; }
+  .box-ink .kicker { color: var(--color-white); }
+
+  /* The pick form */
+  .battle-corners {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: end;
+  }
+  @media (min-width: 48rem) { .battle-corners { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); } }
+  .corner { min-width: 0; padding: 0.75rem; border: 3px solid var(--color-white); }
+  .corner-red { background: var(--color-red); }
+  .corner-blue { background: var(--color-blue); }
+  .corner-label { display: block; margin-bottom: 0.4rem; font: 400 1.75rem/1 var(--font-display); text-transform: uppercase; color: var(--color-white); }
+  .corner-vs { justify-self: center; }
+  .battle-go-row { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: center; }
+  .battle-go { font-size: 1.5rem; padding: 0.8rem 1.1rem; }
+
+  .battle-links { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
+
+  /* Fight card: a boxing bill, red corner left, blue corner right */
+  .fight-card {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 4px solid var(--color-ink);
+    background: var(--color-white);
+    box-shadow: 8px 8px 0 var(--color-ink);
+  }
+  .fight-card > li + li { border-top: 2px solid var(--color-ink); }
+  .fight-row {
+    display: grid;
+    grid-template-columns: 2.2rem minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: "no a vs b" "no res res res";
+    gap: 0.25rem 0.5rem;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  @media (min-width: 56rem) {
+    .fight-row { grid-template-columns: 3rem minmax(0, 1fr) auto minmax(0, 1fr) 16rem; grid-template-areas: "no a vs b res"; }
+  }
+  a.fight-row:hover { background: var(--color-yellow); color: var(--color-ink); }
+  a.fight-row:focus-visible { outline: 4px solid var(--color-blue); outline-offset: -4px; }
+  .fight-no { grid-area: no; font: 400 1.75rem/1 var(--font-display); color: var(--color-red); -webkit-text-stroke: 1px var(--color-ink); }
+  .fight-side { display: flex; gap: 0.4rem; align-items: center; justify-content: space-between; min-width: 0; padding: 0.3rem 0.45rem; color: var(--color-white); }
+  .fight-side-a { grid-area: a; background: var(--color-red); }
+  .fight-side-b { grid-area: b; background: var(--color-blue); }
+  .fight-side.is-safer { outline: 3px solid var(--color-ink); box-shadow: 3px 3px 0 var(--color-yellow), 5px 5px 0 var(--color-ink); }
+  .fight-name { min-width: 0; font: 900 0.75rem/1.15 var(--font-body); text-transform: uppercase; overflow-wrap: anywhere; }
+  .fight-score { font: 400 1.6rem/1 var(--font-display); }
+  .fight-vs { grid-area: vs; font: 400 1.1rem/1 var(--font-display); text-transform: uppercase; }
+  .fight-result { grid-area: res; font: 900 0.75rem/1.25 var(--font-body); text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* Front-page hall of shame */
+  .shame-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-items: end; }
+  @media (min-width: 48rem) { .shame-head { grid-template-columns: minmax(0, 1fr) 20rem; } }
+  .shame-h {
+    margin: 0;
+    font: 400 clamp(3.75rem, 17vw, 9.5rem)/0.85 var(--font-display);
+    text-transform: uppercase;
+  }
+  .shame-h span {
+    color: var(--color-white);
+    background: var(--color-red);
+    padding: 0 0.1em;
+    -webkit-text-stroke: 2px var(--color-ink);
+    text-shadow: 4px 4px 0 var(--color-ink);
+  }
+  .shame-robots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin: 0; padding: 0; list-style: none; max-width: 20rem; }
+  .shame-robots li { padding: 0.35rem; background: var(--color-yellow); border: 3px solid var(--color-ink); box-shadow: 4px 4px 0 var(--color-red); }
+  .shame-robots li:nth-child(2) { transform: rotate(-4deg); }
+  .shame-robots li:nth-child(3) { transform: rotate(3deg); }
+  .shame-board { box-shadow: 10px 10px 0 var(--color-red); border-width: 5px; }
+  .shame-board > li:nth-child(-n + 3) > .ledger-row { background: var(--color-yellow); }
+  .shame-board > li:nth-child(-n + 3) .ledger-rank { font-size: 3rem; }
+  .shame-foot { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+  .shame-shovel { width: 4.5rem; }
+
+  /* Front-page battle teaser */
+  .teaser-ring { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0.6rem; align-items: center; }
+  .teaser-ring .fighter-n { font-size: clamp(3.5rem, 15vw, 5.5rem); }
+  .teaser-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0; }
+}
+
+/* Battle reveal: corners charge in, the referee stomps up, the pink slip slaps on. Reduced motion skips all of it. */
+@media (prefers-reduced-motion: no-preference) {
+  .battle-result.is-fight .fighter-a { animation: charge-left 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+  .battle-result.is-fight .fighter-b { animation: charge-right 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+  .battle-result.is-fight .battle-ring > .vs { animation: spin-in 0.6s 0.35s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+  .battle-result.is-fight .referee { animation: stomp 0.6s 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+  .battle-result.is-fight .pink-slip { animation: slip-slap 0.4s 0.95s cubic-bezier(0.3, 1.8, 0.5, 1) both; }
+  .battle-result.is-fight .battle-verdict { animation: slam 0.5s 0.1s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+  .battle-result.is-fight .battle-quip { animation: scrawl 0.5s 1.1s ease-out both; }
+  /* Two flashes in 1.2 s, under the three-per-second photosensitivity limit. */
+  .battle-result.is-fight .verdict-siren { animation: siren 0.6s ease-in-out 2; }
+}
+
+@keyframes charge-left {
+  from { transform: translateX(-120%) rotate(-12deg); opacity: 0; }
+}
+
+@keyframes charge-right {
+  from { transform: translateX(120%) rotate(12deg); opacity: 0; }
+}
+
+@keyframes stomp {
+  from { transform: translateY(40%); opacity: 0; }
+}
+
+@keyframes slip-slap {
+  from { transform: rotate(-20deg) scale(2); opacity: 0; }
 }

@@ -11,6 +11,7 @@ const C = {
   white: '#ffffff',
   muted: '#3d3a33',
 };
+const PINK = '#ff8fb1';
 
 const DISPLAY = "Anton, Impact, 'Arial Narrow', 'DejaVu Sans Condensed', sans-serif";
 const BODY = "Archivo, 'Arial Black', Arial, 'DejaVu Sans', sans-serif";
@@ -310,6 +311,114 @@ export function renderVerdictPageSvg(card, robot) {
   <text x="${pad}" y="${footerY + 4}" font-family="${BODY}" font-size="20" font-weight="900" fill="${C.ink}" data-robot-line="">“${escapeXml(card.robotLine)}”</text>
   <text x="${W - 190}" y="${footerY + 4}" text-anchor="end" font-family="${BODY}" font-size="20" font-weight="900" fill="${C.ink}">humanobsolescenceindex.com</text>
   ${robot ? placeSvg(robot, W - 170, H - 214, 150, 180) : ''}
+</svg>
+`;
+}
+
+/**
+ * One 1200x630 card per curated /vs/<a>-vs-<b>/ battle.
+ * @param {{ key: string; edition: string; headline: string; referee: string; a: any; b: any }} card a, b: FighterView from src/lib/battle.ts
+ * @param {{ robot?: string; referee?: string }} art pink-slip robot SVG and the referee art as a PNG data URI
+ */
+export function renderBattleSvg(card, art = {}) {
+  const W = OG_WIDTH;
+  const H = OG_HEIGHT;
+  const pad = 52;
+  const leftW = 790;
+  // Anton runs narrower than fitTitle's monospace estimate; widen the budget so short headlines stay on one line.
+  const head = fitTitle(card.headline.toUpperCase(), { width: leftW / 0.75, sizes: [50, 44, 38, 34, 30], maxLines: 2 });
+  const headLineH = Math.round(head.size * 1.08);
+  const headTop = 206;
+  const headLines = head.lines
+    .map((l, i) => {
+      const baseline = headTop + head.size * 0.86 + i * headLineH;
+      const hw = Math.min(leftW + 16, Math.round(l.length * head.size * 0.5 + 18));
+      return `<rect x="${pad - 8}" y="${Math.round(baseline - head.size * 0.88)}" width="${hw}" height="${Math.round(head.size * 1.04)}" fill="${C.yellow}"/>
+  <text x="${pad}" y="${baseline}" font-family="${DISPLAY}" font-size="${head.size}" fill="${C.ink}" data-headline="">${escapeXml(l)}</text>`;
+    })
+    .join('\n  ');
+
+  const tileY = 326;
+  const tileW = 330;
+  const tileH = 196;
+  const tile = (f, x, bg, deg, side) => {
+    const cx = x + tileW / 2;
+    // Heavy uppercase Archivo runs wider than fitTitle's estimate, hence the narrower budget.
+    const fit = { width: (tileW - 30) * 0.8, sizes: [20, 18, 16, 15] };
+    const two = fitTitle(f.title.toUpperCase(), { ...fit, maxLines: 2 });
+    const t = two.lines.at(-1).endsWith('…') ? fitTitle(f.title.toUpperCase(), { ...fit, sizes: [14, 13, 12], maxLines: 3 }) : two;
+    const titleLines = t.lines
+      .map((l, i) => `<text x="${cx}" y="${tileY + (t.lines.length > 2 ? 120 : 126) + i * Math.round(t.size * 1.12)}" text-anchor="middle" font-family="${BODY}" font-size="${t.size}" font-weight="900" fill="${C.white}">${escapeXml(l)}</text>`)
+      .join('\n    ');
+    const tag =
+      f.fate === 'pinkslip'
+        ? ''
+        : `<g transform="rotate(-4 ${cx} ${tileY + tileH})">
+      <rect x="${cx - 70}" y="${tileY + tileH - 22}" width="140" height="40" fill="${f.fate === 'safer' ? C.yellow : C.white}" stroke="${C.ink}" stroke-width="3"/>
+      <text x="${cx}" y="${tileY + tileH + 9}" text-anchor="middle" font-family="${DISPLAY}" font-size="28" letter-spacing="2" fill="${C.ink}" data-tag="${f.fate}">${escapeXml(f.tag.toUpperCase())}</text>
+    </g>`;
+    return `<g transform="rotate(${deg} ${cx} ${tileY + tileH / 2})" data-fighter="${side}" data-fate="${f.fate}">
+    <rect x="${x + 10}" y="${tileY + 10}" width="${tileW}" height="${tileH}" fill="${C.ink}"/>
+    <rect x="${x}" y="${tileY}" width="${tileW}" height="${tileH}" fill="${bg}" stroke="${C.white}" stroke-width="4"/>
+    <text x="${cx + 4}" y="${tileY + 84}" text-anchor="middle" font-family="${DISPLAY}" font-size="84" fill="${C.ink}">${f.score}</text>
+    <text x="${cx}" y="${tileY + 80}" text-anchor="middle" font-family="${DISPLAY}" font-size="84" fill="${C.white}" data-obs="${f.score}">${f.score}</text>
+    <text x="${cx}" y="${tileY + 102}" text-anchor="middle" font-family="${BODY}" font-size="13" font-weight="900" letter-spacing="2" fill="${C.white}">DOOM SCORE / 100</text>
+    ${titleLines}
+    ${tag}
+  </g>`;
+  };
+  const xa = pad;
+  const xb = pad + tileW + 100;
+  const loser = card.a.fate === 'pinkslip' ? 'a' : card.b.fate === 'pinkslip' ? 'b' : null;
+  // The slip sits where the winner's SAFER tag sits, so it never covers the job title.
+  const slipX = (loser === 'a' ? xa : xb) + tileW / 2 - 95;
+  const slipY = tileY + tileH - 32;
+  const slip = loser
+    ? `<g transform="rotate(4 ${slipX + 95} ${slipY + 25})" data-pink-slip="${loser}">
+    <rect x="${slipX + 6}" y="${slipY + 6}" width="190" height="50" fill="${C.ink}"/>
+    <rect x="${slipX}" y="${slipY}" width="190" height="50" fill="${PINK}" stroke="${C.ink}" stroke-width="4"/>
+    <text x="${slipX + 95}" y="${slipY + 29}" text-anchor="middle" font-family="${DISPLAY}" font-size="27" letter-spacing="2" fill="${C.ink}">PINK SLIP</text>
+    <text x="${slipX + 95}" y="${slipY + 43}" text-anchor="middle" font-family="${BODY}" font-size="11" font-weight="900" letter-spacing="1" fill="${C.ink}">ISSUED BY: THE ROBOTS</text>
+  </g>`
+    : '';
+  const robot = loser && art.robot ? placeSvg(art.robot, slipX - 70, slipY - 40, 70, 84) : '';
+  const refereeLine = fitTitle(card.referee, { width: 640, sizes: [20, 18, 16], maxLines: 1 });
+  const vx = xa + tileW + 50;
+  const referee = art.referee
+    ? `<rect x="${908}" y="${158}" width="244" height="366" fill="${C.red}"/>
+  <image x="${898}" y="${148}" width="244" height="366" href="${art.referee}" preserveAspectRatio="xMidYMid slice"/>
+  <rect x="${898}" y="${148}" width="244" height="366" fill="none" stroke="${C.ink}" stroke-width="6"/>`
+    : '';
+  const footerY = H - 52;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <defs>
+    <pattern id="dots" width="6" height="6" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1" fill="${C.ink}" fill-opacity="0.09"/>
+    </pattern>
+  </defs>
+  <rect width="${W}" height="${H}" fill="${C.paper}"/>
+  <rect width="${W}" height="${H}" fill="url(#dots)"/>
+  <text x="${pad}" y="34" font-family="${BODY}" font-size="16" font-weight="900" letter-spacing="2" fill="${C.ink}">${escapeXml(card.edition)} EDITION · WHO'S SAFER?</text>
+  <text x="${W - pad}" y="34" text-anchor="end" font-family="${BODY}" font-size="16" font-weight="900" letter-spacing="2" fill="${C.ink}">HUMAN OBSOLESCENCE INDEX</text>
+  <text x="${W / 2 + 5}" y="117" text-anchor="middle" font-family="${DISPLAY}" font-size="92" fill="${C.ink}">THE DAILY DOOM</text>
+  <text x="${W / 2}" y="112" text-anchor="middle" font-family="${DISPLAY}" font-size="92" fill="${C.red}" stroke="${C.ink}" stroke-width="2">THE DAILY DOOM</text>
+  <rect x="${pad}" y="128" width="${W - pad * 2}" height="4" fill="${C.ink}"/>
+  <rect x="${pad}" y="136" width="${W - pad * 2}" height="4" fill="${C.ink}"/>
+  <rect x="${pad}" y="152" width="370" height="38" fill="${C.ink}"/>
+  <text x="${pad + 14}" y="179" font-family="${DISPLAY}" font-size="24" letter-spacing="2" fill="${C.yellow}">WHO'S SAFER? · FIGHT NIGHT</text>
+  ${headLines}
+  ${tile(card.a, xa, C.red, -2, 'a')}
+  ${tile(card.b, xb, C.blue, 2, 'b')}
+  <circle cx="${vx}" cy="${tileY + 70}" r="40" fill="${C.yellow}" stroke="${C.ink}" stroke-width="4"/>
+  <text x="${vx}" y="${tileY + 86}" text-anchor="middle" font-family="${DISPLAY}" font-size="44" fill="${C.ink}">VS</text>
+  ${referee}
+  <rect y="${footerY - 34}" width="${W}" height="${H - footerY + 34}" fill="${C.yellow}"/>
+  <rect y="${footerY - 38}" width="${W}" height="4" fill="${C.ink}"/>
+  ${slip}
+  ${robot}
+  <text x="${pad}" y="${footerY + 4}" font-family="${BODY}" font-size="${refereeLine.size}" font-weight="900" fill="${C.ink}" data-referee="">“${escapeXml(refereeLine.lines[0])}”</text>
+  <text x="${W - pad}" y="${footerY + 4}" text-anchor="end" font-family="${BODY}" font-size="20" font-weight="900" fill="${C.ink}">humanobsolescenceindex.com</text>
 </svg>
 `;
 }

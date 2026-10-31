@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BattleResult from '../../components/BattleResult.astro';
+import SharePanel from '../../components/SharePanel.astro';
+import { battleDescription, battleTitle } from '../../lib/battle';
+import { CURATED_BATTLES, type CuratedBattle } from '../../lib/battle-data';
+import { verdictPath, VERDICTS_META } from '../../lib/verdicts';
+
+export function getStaticPaths() {
+  return CURATED_BATTLES.map((b) => ({ params: { pair: b.key }, props: { b } }));
+}
+
+const { b } = Astro.props as { b: CuratedBattle };
+const v = b.view;
+---
+
+<BaseLayout
+  title={battleTitle(v)}
+  description={battleDescription(v)}
+  image={b.og}
+  imageAlt={`Daily Doom battle card: ${v.a.title}, Doom Score ${v.a.score}, versus ${v.b.title}, Doom Score ${v.b.score}. ${v.headline}.`}
+  type="article"
+>
+  <div class="mx-auto max-w-6xl px-4 pb-4 pt-8 md:px-6">
+    <p class="kicker"><a href="/vs/">← Every fight on the card</a></p>
+    <div class="mt-4" data-battle-pair-page>
+      <BattleResult view={v} fighters={b.fighters} edition={VERDICTS_META.edition} heading="h1" idPrefix="pair" />
+    </div>
+
+    <aside class="disclaimer mt-6" aria-label="What this battle means" data-disclaimer>
+      <p class="sub-h">AI exposure ≠ job loss</p>
+      <p class="mt-2">
+        The robot referee is theatre. The numbers are not. Each Doom Score blends how much of the occupation's task list AI research
+        says AI can touch (65%) with how BLS projects its employment to change from 2025 to 2035 (35%). "Safer" means the lower score,
+        nothing more. <a href="/methodology/" class="font-bold">Read the methodology</a>.
+      </p>
+    </aside>
+
+    <section class="mt-8" aria-labelledby="files-h">
+      <h2 id="files-h" class="sub-h">Read each fighter's file</h2>
+      <ul class="battle-links mt-3">
+        <li><a class="btn" href={verdictPath(b.a.slug)}>{b.a.title}: Doom Score {b.a.obs} →</a></li>
+        <li><a class="btn" href={verdictPath(b.b.slug)}>{b.b.title}: Doom Score {b.b.obs} →</a></li>
+        <li><a class="btn btn-yellow" href="/vs/">Pick two jobs. Start a fight.</a></li>
+      </ul>
+    </section>
+
+    <div class="mt-10"><SharePanel title="Post the fight" idPrefix="pair-share" /></div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { initBattlePairPage } from '../../lib/battle-page';
+
+  const result = document.querySelector<HTMLElement>('[data-battle-pair-page] [data-battle]');
+  const share = document.querySelector<HTMLElement>('[data-share-panel]');
+  if (result && share) initBattlePairPage(result, share);
+</script>

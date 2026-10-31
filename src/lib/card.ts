@@ -9,10 +9,10 @@ export const CARD_SIZES: Record<CardKind, { width: number; height: number }> = {
   post: { width: 1200, height: 630 },
 };
 
-const C = { ink: '#0b0b0b', paper: '#fffbea', yellow: '#ffe500', red: '#e4002b', blue: '#1f5bff', white: '#ffffff' };
-const ANTON = 'Anton, Impact, sans-serif';
-const ARCHIVO = 'Archivo, Arial, sans-serif';
-const MARKER = '"Permanent Marker", cursive';
+export const C = { ink: '#0b0b0b', paper: '#fffbea', yellow: '#ffe500', red: '#e4002b', blue: '#1f5bff', white: '#ffffff' };
+export const ANTON = 'Anton, Impact, sans-serif';
+export const ARCHIVO = 'Archivo, Arial, sans-serif';
+export const MARKER = '"Permanent Marker", cursive';
 
 /** Faces the cards draw with; each must be loaded before drawing so no fallback font lands on a card. */
 export const CARD_FONTS = ['400 100px Anton', '900 40px Archivo', '700 40px Archivo', '400 40px Archivo', '400 40px "Permanent Marker"'];
@@ -78,7 +78,7 @@ export async function loadCardFonts(sample: string): Promise<boolean> {
 
 export type CardArt = { photo: CanvasImageSource | null; robots: Partial<Record<RobotPose, CanvasImageSource>> };
 
-function loadImage(src: string): Promise<HTMLImageElement | null> {
+export function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
     img.decoding = 'async';
@@ -110,15 +110,15 @@ export function loadCardArt(): Promise<CardArt> {
   return artPromise;
 }
 
-type Ctx = CanvasRenderingContext2D;
+export type Ctx = CanvasRenderingContext2D;
 
-function font(ctx: Ctx, weight: number, size: number, family: string, spacing = 0) {
+export function font(ctx: Ctx, weight: number, size: number, family: string, spacing = 0) {
   ctx.font = `${weight} ${size}px ${family}`;
   ctx.letterSpacing = `${spacing}px`;
 }
 
 /** Greedy word wrap by measured width; a single word wider than the line is kept whole. */
-function wrap(ctx: Ctx, text: string, maxWidth: number): string[] {
+export function wrap(ctx: Ctx, text: string, maxWidth: number): string[] {
   const lines: string[] = [];
   let line = '';
   for (const word of text.split(/\s+/).filter(Boolean)) {
@@ -136,7 +136,7 @@ function wrap(ctx: Ctx, text: string, maxWidth: number): string[] {
  * Largest size from `sizes` whose wrapped lines fit maxWidth and maxHeight (at lineHeight × size). Below the list it
  * keeps shrinking rather than truncating, so every word of the data always lands on the card.
  */
-function fitArea(ctx: Ctx, text: string, weight: number, family: string, sizes: number[], maxWidth: number, maxHeight: number, lineHeight: number) {
+export function fitArea(ctx: Ctx, text: string, weight: number, family: string, sizes: number[], maxWidth: number, maxHeight: number, lineHeight: number) {
   const fits = (size: number) => {
     font(ctx, weight, size, family);
     const lines = wrap(ctx, text, maxWidth);
@@ -156,7 +156,7 @@ function fitArea(ctx: Ctx, text: string, weight: number, family: string, sizes: 
   return { size, lines: r.lines };
 }
 
-function halftone(ctx: Ctx, w: number, h: number, color: string, step: number, r: number) {
+export function halftone(ctx: Ctx, w: number, h: number, color: string, step: number, r: number) {
   ctx.fillStyle = color;
   for (let y = step / 2; y < h; y += step) {
     for (let x = step / 2; x < w; x += step) {
@@ -167,7 +167,7 @@ function halftone(ctx: Ctx, w: number, h: number, color: string, step: number, r
   }
 }
 
-function rotated(ctx: Ctx, x: number, y: number, deg: number, draw: () => void) {
+export function rotated(ctx: Ctx, x: number, y: number, deg: number, draw: () => void) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate((deg * Math.PI) / 180);
@@ -176,7 +176,7 @@ function rotated(ctx: Ctx, x: number, y: number, deg: number, draw: () => void) 
 }
 
 /** A label in a filled box, centred on (x, y). */
-function boxedLabel(ctx: Ctx, text: string, x: number, y: number, o: { size: number; family: string; weight: number; bg: string; fg: string; padX: number; padY: number; border?: string; spacing?: number; maxWidth?: number }) {
+export function boxedLabel(ctx: Ctx, text: string, x: number, y: number, o: { size: number; family: string; weight: number; bg: string; fg: string; padX: number; padY: number; border?: string; spacing?: number; maxWidth?: number }) {
   font(ctx, o.weight, o.size, o.family, o.spacing ?? 0);
   let size = o.size;
   while (o.maxWidth && ctx.measureText(text).width + o.padX * 2 > o.maxWidth && size > 12) {
@@ -200,7 +200,7 @@ function boxedLabel(ctx: Ctx, text: string, x: number, y: number, o: { size: num
   return { w, h };
 }
 
-function stamp(ctx: Ctx, text: string, x: number, y: number, size: number, color: string) {
+export function stamp(ctx: Ctx, text: string, x: number, y: number, size: number, color: string) {
   rotated(ctx, x, y, -8, () => {
     font(ctx, 400, size, ANTON, size * 0.06);
     const w = ctx.measureText(text).width + size * 0.7;
@@ -223,7 +223,7 @@ const BURST = [
   [47, 86], [31, 97], [27, 79], [8, 80], [14, 62], [0, 50], [14, 38], [6, 20], [25, 19], [30, 2], [43, 14],
 ];
 
-function burstPath(ctx: Ctx, x: number, y: number, size: number) {
+export function burstPath(ctx: Ctx, x: number, y: number, size: number) {
   ctx.beginPath();
   BURST.forEach(([px, py], i) => {
     const X = x + (px / 100) * size;
@@ -234,11 +234,11 @@ function burstPath(ctx: Ctx, x: number, y: number, size: number) {
   ctx.closePath();
 }
 
-function bandColor(band: string) {
+export function bandColor(band: string) {
   return band === 'low' ? C.blue : band === 'moderate' ? C.ink : C.red;
 }
 
-function shadowText(ctx: Ctx, text: string, x: number, y: number, fill: string, shadow: string, off: number, stroke?: { color: string; width: number }) {
+export function shadowText(ctx: Ctx, text: string, x: number, y: number, fill: string, shadow: string, off: number, stroke?: { color: string; width: number }) {
   ctx.fillStyle = shadow;
   ctx.fillText(text, x + off, y + off);
   ctx.fillStyle = fill;
@@ -251,7 +251,7 @@ function shadowText(ctx: Ctx, text: string, x: number, y: number, fill: string, 
 }
 
 /** Highlighter-block lines (the tabloid headline treatment). */
-function highlightLines(ctx: Ctx, lines: string[], size: number, x: number, top: number, lh: number, align: 'center' | 'left', bg: string) {
+export function highlightLines(ctx: Ctx, lines: string[], size: number, x: number, top: number, lh: number, align: 'center' | 'left', bg: string) {
   font(ctx, 400, size, ANTON);
   ctx.textAlign = align;
   lines.forEach((line, i) => {
@@ -265,7 +265,7 @@ function highlightLines(ctx: Ctx, lines: string[], size: number, x: number, top:
   });
 }
 
-function drawImageBox(ctx: Ctx, img: CanvasImageSource, x: number, y: number, w: number, h: number, deg: number, shadow = C.red) {
+export function drawImageBox(ctx: Ctx, img: CanvasImageSource, x: number, y: number, w: number, h: number, deg: number, shadow = C.red) {
   rotated(ctx, x + w / 2, y + h / 2, deg, () => {
     ctx.fillStyle = shadow;
     ctx.fillRect(-w / 2 + 14, -h / 2 + 14, w, h);
@@ -276,7 +276,7 @@ function drawImageBox(ctx: Ctx, img: CanvasImageSource, x: number, y: number, w:
   });
 }
 
-function speechBubble(ctx: Ctx, text: string, x: number, y: number, w: number, h: number, tailX: number, tailY: number, sizes: number[]) {
+export function speechBubble(ctx: Ctx, text: string, x: number, y: number, w: number, h: number, tailX: number, tailY: number, sizes: number[]) {
   ctx.fillStyle = C.white;
   ctx.strokeStyle = C.ink;
   ctx.lineWidth = 6;

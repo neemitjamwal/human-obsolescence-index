@@ -1,0 +1,86 @@
+---
+import CiteLink from './CiteLink.astro';
+import Robot from './Robot.astro';
+import { ART, artSrc, artSrcset } from '../data/art';
+import type { BattleView, Fighter } from '../lib/battle';
+import { verdictPath } from '../lib/verdicts';
+
+interface Props {
+  view: BattleView;
+  /** The two verdicts, for the share cards drawn in the browser. */
+  fighters: { a: Fighter; b: Fighter };
+  edition: string;
+  heading?: 'h1' | 'h2';
+  /** Unique per page; seeds the robot SVG ids. */
+  idPrefix?: string;
+  hidden?: boolean;
+}
+
+const { view, fighters, edition, heading = 'h2', idPrefix = 'battle', hidden = false } = Astro.props;
+const Tag = heading;
+const art = ART.battleExecutioner;
+const winner = view.outcome.kind === 'win' ? view.outcome.winner : '';
+const sides = [
+  { side: 'a', f: view.a, corner: 'Red corner', tone: 'fighter-red' },
+  { side: 'b', f: view.b, corner: 'Blue corner', tone: 'fighter-blue' },
+] as const;
+---
+
+<article
+  class="battle-result box-ink"
+  aria-labelledby={`${idPrefix}-h`}
+  data-battle
+  data-battle-key={view.key}
+  data-outcome={view.outcome.kind}
+  data-winner={winner}
+  data-edition={edition}
+  data-battle-record={JSON.stringify(fighters)}
+  hidden={hidden}
+>
+  <div class="verdict-siren" aria-hidden="true"></div>
+  <p class="battle-k">Who's safer? · Fight night</p>
+  <Tag id={`${idPrefix}-h`} class="battle-verdict mt-2"><span data-bf="headline">{view.headline}</span></Tag>
+  <p class="kicker battle-scoreline mt-1" data-bf="scoreLine">{view.scoreLine}</p>
+  <div class="battle-ring mt-4">
+    {
+      sides.map(({ side, f, corner, tone }) => (
+        <div class:list={['fighter', tone, `fighter-${side}`]} data-fighter={side} data-fate={f.fate}>
+          <p class="fighter-corner">{corner}</p>
+          <p class="fighter-n" data-ff="score" data-obs-score={f.score}>{f.score}</p>
+          <p class="fighter-of">Doom Score / 100</p>
+          <p class="fighter-t">
+            <a href={verdictPath(f.slug)} data-ff-link><span data-ff="title">{f.title}</span></a>
+          </p>
+          <p class="fighter-stat" data-ff="changeLine">{f.changeLine}</p>
+          <p class="fighter-tag" data-ff="tag" hidden={f.fate === 'pinkslip'}>{f.tag}</p>
+          <div class="pink-slip" data-pink-slip hidden={f.fate !== 'pinkslip'}>
+            <Robot pose="pinkslip" id={`${idPrefix}-slip-${side}`} decorative class="pink-slip-robot" />
+            <p class="pink-slip-form">
+              <span class="pink-slip-label">Pink slip</span>
+              <span class="pink-slip-from">Issued by: the robots</span>
+            </p>
+          </div>
+        </div>
+      ))
+    }
+    <p class="vs" aria-hidden="true">VS</p>
+    <figure class="referee" data-referee>
+      <picture>
+        <source type="image/avif" srcset={artSrcset(art, 'avif')} sizes="(min-width: 56rem) 15rem, 38vw" />
+        <source type="image/webp" srcset={artSrcset(art, 'webp')} sizes="(min-width: 56rem) 15rem, 38vw" />
+        <img src={artSrc(art, 320, 'webp')} width={art.width} height={art.height} alt={art.alt} loading="lazy" decoding="async" data-referee-art={art.name} />
+      </picture>
+      <figcaption class="bubble"><span class="sr-only">The robot referee says: </span><span data-bf="referee">{view.referee}</span></figcaption>
+    </figure>
+  </div>
+  <p class="roast battle-quip mt-5" data-bf="quip" data-quip-id={view.quipId}>{view.quip}</p>
+  <p class="battle-sub mt-3" data-bf="projectionLine">{view.projectionLine}</p>
+  <p class="fine battle-fine mt-4" data-disclaimer-fine data-disclaimer>
+    <span data-bf="fine">{view.fine}</span>
+    {' '}<a href="/methodology/" class="font-bold">How the Doom Score works →</a>
+  </p>
+  <p class="kicker mt-2">
+    Sources: <CiteLink id="hoi-composite" /> · <CiteLink id="bls-ep" /> · <CiteLink id="msft-ai-applicability" /> ·
+    {' '}<CiteLink id="openai-gpts-are-gpts" />
+  </p>
+</article>

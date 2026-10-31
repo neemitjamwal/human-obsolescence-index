@@ -1,17 +1,20 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SharePanel from '../components/SharePanel.astro';
+import Robot from '../components/Robot.astro';
 import VerdictPanel from '../components/VerdictPanel.astro';
 import { ART, artSrc, artSrcset } from '../data/art';
-import { leaderboard, META, occupationPath } from '../lib/data';
+import { leaderboard, META } from '../lib/data';
 import { scoreBand } from '../lib/ledger';
 import { NAME_MAX } from '../lib/name';
-import { VERDICTS, VERDICTS_META } from '../lib/verdicts';
+import { FEATURED } from '../lib/battle-data';
+import { VERDICTS, VERDICTS_META, verdictPath } from '../lib/verdicts';
 import { verdictRecord } from '../lib/verdict-feed';
 import { verdictView } from '../lib/verdict-view';
 
 const board = leaderboard();
-const shame = board.slice(0, 10);
+const shame = board.slice(0, 20);
+const teaser = FEATURED;
 const u = META.universe;
 const hero = ART.hero;
 // Server-rendered placeholder so the panel's layout exists before the first lookup; the zone stays hidden until then.
@@ -85,14 +88,24 @@ const sampleView = verdictView(sampleRecord, { edition: VERDICTS_META.edition, b
     <div class="mt-8"><SharePanel /></div>
   </section>
 
-  <section class="mx-auto mt-10 max-w-6xl border-t-[6px] border-double border-ink px-4 pt-8 md:px-6" aria-labelledby="shame-title">
-    <h2 id="shame-title" class="page-h">Hall of <span class="hl-red">shame</span></h2>
-    <p class="prose-block mt-3 font-bold">The {shame.length} most doomed jobs on the board, by Doom Score. Each one has its own page of receipts.</p>
-    <ol class="ledger ledger-list ledger-compact mt-5" aria-label={`Top ${shame.length} occupations by Doom Score`} data-home-shame>
+  <section class="shame mx-auto mt-10 max-w-6xl border-t-[6px] border-double border-ink px-4 pt-8 md:px-6" aria-labelledby="shame-title" data-hall-of-shame>
+    <div class="shame-head">
+      <div>
+        <p class="eyebrow eyebrow-red siren-tag">Wanted by the robots</p>
+        <h2 id="shame-title" class="shame-h mt-3">Hall of <span>shame</span></h2>
+        <p class="prose-block mt-3 font-bold">The {shame.length} most doomed jobs on the board, by Doom Score. Each one has its own verdict page and share card.</p>
+      </div>
+      <ul class="shame-robots" aria-label="The robots doing the hunting">
+        <li><Robot pose="pointing" id="shame-pointing" /></li>
+        <li><Robot pose="pinkslip" id="shame-pinkslip" /></li>
+        <li><Robot pose="peeking" id="shame-peeking" /></li>
+      </ul>
+    </div>
+    <ol class="ledger ledger-list ledger-compact shame-board mt-5" aria-label={`Top ${shame.length} occupations by Doom Score`} data-home-shame>
       {
         shame.map((o) => (
           <li>
-            <a class="ledger-row" href={occupationPath(o.slug)} data-shame-rank={o.leaderboardRank} data-rank={o.leaderboardRank}>
+            <a class="ledger-row" href={verdictPath(o.slug)} data-shame-rank={o.leaderboardRank} data-rank={o.leaderboardRank} data-obs={o.scores.obs.value}>
               <span class="ledger-rank"><span class="sr-only">Number </span>{o.leaderboardRank}</span>
               <span class="ledger-name">{o.title}</span>
               <span class="ledger-bar">
@@ -106,8 +119,37 @@ const sampleView = verdictView(sampleRecord, { edition: VERDICTS_META.edition, b
         ))
       }
     </ol>
-    <p class="mt-6"><a class="btn btn-yellow" href="/leaderboard/">The full board: all {board.length} →</a></p>
+    <div class="shame-foot mt-6">
+      <a class="btn btn-yellow" href="/leaderboard/">The full board: all {board.length} →</a>
+      <Robot pose="shovel" id="shame-shovel" decorative class="shame-shovel" />
+    </div>
     <p class="fine mt-4">AI exposure ≠ job loss. Exposure measures what AI can do to an occupation's tasks, not whether the job disappears. <a href="/methodology/">How we score it</a></p>
+  </section>
+
+  <section class="mx-auto mt-10 max-w-6xl px-4 pb-4 md:px-6" aria-labelledby="teaser-title" data-battle-teaser>
+    <article class="battle-teaser box-ink">
+      <p class="battle-k">Who's safer? · Fight night</p>
+      <h2 id="teaser-title" class="sr-only">Who's safer? {teaser.view.a.title} versus {teaser.view.b.title}</h2>
+      <div class="teaser-ring mt-4">
+        <a class="fighter fighter-red" href={verdictPath(teaser.a.slug)} data-fighter="a" data-fate={teaser.view.a.fate}>
+          <span class="fighter-n" data-obs-score={teaser.a.obs}>{teaser.a.obs}</span>
+          <span class="fighter-t">{teaser.a.title}</span>
+        </a>
+        <p class="vs" aria-hidden="true">VS</p>
+        <a class="fighter fighter-blue" href={verdictPath(teaser.b.slug)} data-fighter="b" data-fate={teaser.view.b.fate}>
+          <span class="fighter-n" data-obs-score={teaser.b.obs}>{teaser.b.obs}</span>
+          <span class="fighter-t">{teaser.b.title}</span>
+        </a>
+      </div>
+      <p class="battle-verdict mt-3">{teaser.view.headline}.</p>
+      <p class="roast battle-quip mt-2">{teaser.view.quip}</p>
+      <p class="battle-sub mt-2">{teaser.view.projectionLine}</p>
+      <p class="teaser-actions mt-4">
+        <a class="btn btn-yellow" href="/vs/">Pick two jobs. Start a fight.</a>
+        <a class="btn" href={teaser.path}>See this fight →</a>
+      </p>
+      <p class="fine mt-3">{teaser.view.fine} <a href="/methodology/" class="font-bold">How the Doom Score works</a></p>
+    </article>
   </section>
 </BaseLayout>
 

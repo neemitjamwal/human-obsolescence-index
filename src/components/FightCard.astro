@@ -1,0 +1,36 @@
+---
+import type { CuratedBattle } from '../lib/battle-data';
+
+interface Props {
+  battles: CuratedBattle[];
+  label: string;
+}
+
+const { battles, label } = Astro.props;
+---
+
+<ol class="fight-card" aria-label={label} data-fight-card>
+  {
+    battles.map((b, i) => {
+      const o = b.view.outcome;
+      return (
+        <li>
+          <a class="fight-row" href={b.path} data-battle-pair={b.key} data-winner={o.kind === 'win' ? o.winner : ''}>
+            <span class="fight-no" aria-hidden="true">{i + 1}</span>
+            <span class:list={['fight-side fight-side-a', o.kind === 'win' && o.winner === 'a' && 'is-safer']}>
+              <span class="fight-name">{b.a.title}</span>
+              <span class="fight-score"><span class="sr-only">Doom Score </span>{b.a.obs}</span>
+            </span>
+            <span class="fight-vs" aria-hidden="true">vs</span>
+            <span class="sr-only">versus</span>
+            <span class:list={['fight-side fight-side-b', o.kind === 'win' && o.winner === 'b' && 'is-safer']}>
+              <span class="fight-name">{b.b.title}</span>
+              <span class="fight-score"><span class="sr-only">Doom Score </span>{b.b.obs}</span>
+            </span>
+            <span class="fight-result">{o.kind === 'win' ? `Safer: ${b.view.winnerTitle}` : b.view.headline}</span>
+          </a>
+        </li>
+      );
+    })
+  }
+</ol>

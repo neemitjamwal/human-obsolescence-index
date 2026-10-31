@@ -449,6 +449,57 @@ if (verdictPages !== verdictsFile.verdicts.length) failures.push(`${verdictPages
 const ogVerdictCards = existsSync(join(dist, 'og', 'v')) ? readdirSync(join(dist, 'og', 'v')).filter((f) => f.endsWith('.png')).length : 0;
 if (ogVerdictCards !== verdictsFile.verdicts.length) failures.push(`dist/og/v has ${ogVerdictCards} cards for ${verdictsFile.verdicts.length} verdicts`);
 
+// ---- /vs/ battles: picker, 40 curated pair pages with a 1200x630 card each, home hall of shame + teaser ----
+const { BATTLE_PAIRS } = await import('../src/data/battles.ts');
+const verdictBySlug = new Map(verdictsFile.verdicts.map((v) => [v.slug, v]));
+const vsIndex = readDist('vs/index.html') ?? '';
+if (!vsIndex) failures.push('dist/vs/index.html is missing');
+if ((vsIndex.match(/role="combobox"/g) ?? []).length !== 2) failures.push('/vs/ does not have exactly two combobox job pickers');
+if (!vsIndex.includes('data-referee-art="index-battle-executioner"')) failures.push('/vs/ does not show the battle executioner art');
+let battlePages = 0;
+for (const [a, b] of BATTLE_PAIRS) {
+  const key = `${a}-vs-${b}`;
+  const rel = `vs/${key}/index.html`;
+  const html = readDist(rel);
+  const va = verdictBySlug.get(a);
+  const vb = verdictBySlug.get(b);
+  if (!va || !vb) {
+    failures.push(`battle ${key} names an occupation with no verdict`);
+    continue;
+  }
+  if (!html) {
+    failures.push(`dist/${rel} is missing`);
+    continue;
+  }
+  battlePages += 1;
+  if (!vsIndex.includes(`href="/vs/${key}/"`)) failures.push(`/vs/ does not link ${key}`);
+  if (!html.includes(`data-obs-score="${va.obs}"`) || !html.includes(`data-obs-score="${vb.obs}"`)) failures.push(`${rel} does not show both Doom Scores`);
+  const winner = va.obs < vb.obs ? 'a' : vb.obs < va.obs ? 'b' : '';
+  if (!html.includes(`data-winner="${winner}"`)) failures.push(`${rel} does not name the lower Doom Score as the safer job`);
+  if (winner) {
+    const loser = winner === 'a' ? 'b' : 'a';
+    if (!html.includes(`data-fighter="${loser}" data-fate="pinkslip"`)) failures.push(`${rel} does not hand the pink slip to the higher Doom Score`);
+  }
+  if (!html.includes('data-referee-art="index-battle-executioner"')) failures.push(`${rel} does not show the battle executioner art`);
+  if (!html.includes('AI exposure ≠ job loss') || !html.includes('href="/methodology/"')) failures.push(`${rel} has no disclaimer with a methodology link`);
+  if (metaContent(html, 'og:image') !== `${SITE}/og/vs/${key}.png`) failures.push(`${rel} og:image is not ${SITE}/og/vs/${key}.png`);
+}
+const ogBattleCards = existsSync(join(dist, 'og', 'vs')) ? readdirSync(join(dist, 'og', 'vs')).filter((f) => f.endsWith('.png')).length : 0;
+if (ogBattleCards !== BATTLE_PAIRS.length) failures.push(`dist/og/vs has ${ogBattleCards} cards for ${BATTLE_PAIRS.length} battles`);
+for (const path of ['/vs/', '/leaderboard/', '/v/telemarketers/', `/vs/${BATTLE_PAIRS[0].join('-vs-')}/`]) {
+  if (!sitemapUrls.includes(`${SITE}${path}`)) failures.push(`sitemap.xml does not list ${path}`);
+}
+const shameSection = frontPage.split('data-hall-of-shame')[1]?.split('</section>')[0] ?? '';
+const shameRows = [...shameSection.matchAll(/href="\/v\/([^"]+)\/" data-shame-rank="(\d+)" data-rank="\d+" data-obs="(\d+)"/g)];
+const top20 = board.slice(0, 20);
+if (shameRows.length !== 20) failures.push(`front page hall of shame has ${shameRows.length} rows, expected 20`);
+shameRows.forEach((m, i) => {
+  const o = top20[i];
+  if (!o || m[1] !== o.slug || Number(m[2]) !== o.leaderboardRank || Number(m[3]) !== o.scores.obs.value) failures.push(`hall of shame row ${i + 1} is ${m[1]}, expected ${o?.slug}`);
+});
+if (!shameSection.includes('href="/leaderboard/"')) failures.push('hall of shame does not link /leaderboard/');
+if ((shameSection.match(/data-robot-pose="/g) ?? []).length < 3) failures.push('hall of shame shows fewer than 3 robot poses');
+if (!frontPage.includes('data-battle-teaser') || !frontPage.includes('href="/vs/"')) failures.push('front page has no battle teaser linking /vs/');
 // ---- Home hero: combobox, lazy data, initial JS budget ----
 if (!/role="combobox"/.test(frontPage) || !/aria-controls="[^"]+"/.test(frontPage)) failures.push('front page has no ARIA combobox job search');
 if (frontPage.includes('data-verdict-feed=') || /"verdicts":\[/.test(frontPage)) failures.push('front page inlines the verdict feed instead of fetching it lazily');
@@ -492,6 +543,6 @@ console.log(
     `(${(cssBytes / 1024).toFixed(1)} KB) with all Daily Doom tokens and no v1 tokens, ticker + hero slot on home, ledger on /leaderboard/, no localhost URLs; ` +
     `${occupationPages} occupation pages with all components (${citationLinks} citation links, all resolving to sources.json), ` +
     `${precedentLinks} museum precedent links, embed widget with ${embedEntriesCount} occupations, ${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes (${growthBranches.stronger} stronger-growth, ${growthBranches.weaker} weaker-growth), stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
-    `search index ${(searchIndexGzip / 1024).toFixed(1)} KB gzip; ${verdictPages} /v/ verdict pages + ${ogVerdictCards} verdict OG cards; front page initial JS ${(homeJsGzip / 1024).toFixed(1)} KB gzip; ${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
+    `search index ${(searchIndexGzip / 1024).toFixed(1)} KB gzip; ${verdictPages} /v/ verdict pages + ${ogVerdictCards} verdict OG cards; ${battlePages} /vs/ battle pages + ${ogBattleCards} battle OG cards, hall of shame top ${shameRows.length}; front page initial JS ${(homeJsGzip / 1024).toFixed(1)} KB gzip; ${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
     `${textFiles.length} text files free of localhost/127.0.0.1, red-list sources only as cite-only links, licensing credits on /about/`,
 );

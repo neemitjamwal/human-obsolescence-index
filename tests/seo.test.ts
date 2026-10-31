@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { OCCUPATIONS, occupationPath } from '../src/lib/data';
 import { VERDICTS, verdictPath } from '../src/lib/verdicts';
+import { CURATED_BATTLES } from '../src/lib/battle-data';
 import { STATIC_PATHS, occupationDescription, ogImagePath, robotsTxt, sitePaths, sitemapXml } from '../src/lib/seo';
 
 const site = new URL('https://humanobsolescenceindex.com');
@@ -24,8 +25,9 @@ describe('sitemap and robots', () => {
   it('lists every page exactly once', () => {
     const paths = sitePaths();
     expect(new Set(paths).size).toBe(paths.length);
-    expect(paths).toHaveLength(STATIC_PATHS.length + OCCUPATIONS.length + VERDICTS.length);
-    for (const p of ['/', '/methodology/', '/press/', '/changelog/', '/about/']) expect(paths).toContain(p);
+    expect(paths).toHaveLength(STATIC_PATHS.length + OCCUPATIONS.length + VERDICTS.length + CURATED_BATTLES.length);
+    for (const p of ['/', '/leaderboard/', '/vs/', '/methodology/', '/press/', '/changelog/', '/about/']) expect(paths).toContain(p);
+    for (const b of CURATED_BATTLES) expect(paths).toContain(b.path);
     for (const o of OCCUPATIONS) expect(paths).toContain(occupationPath(o.slug));
     for (const v of VERDICTS) expect(paths).toContain(verdictPath(v.slug));
   });

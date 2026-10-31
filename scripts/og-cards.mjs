@@ -5,13 +5,24 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { OG_HEIGHT, OG_WIDTH, buildCards, buildVerdictPageCards, renderVerdictPageSvg, renderVerdictSvg } from './lib/verdict-cards.mjs';
+import {
+  OG_HEIGHT,
+  OG_WIDTH,
+  buildCards,
+  buildVerdictPageCards,
+  renderBattleSvg,
+  renderVerdictPageSvg,
+  renderVerdictSvg,
+} from './lib/verdict-cards.mjs';
+import { BATTLE_PAIRS } from '../src/data/battles.ts';
 import { panicFor } from '../src/data/roasts.ts';
+import { battleView } from '../src/lib/battle.ts';
 import { ROBOT_POSE_BY_BAND, robotSvg } from '../src/lib/robots.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'public', 'og');
 const verdictDir = join(outDir, 'v');
+const battleDir = join(outDir, 'vs');
 const hashFile = join(root, '.cache', 'og-hashes.json');
 const data = JSON.parse(readFileSync(join(root, 'src/data/occupations.json'), 'utf8'));
 const verdicts = JSON.parse(readFileSync(join(root, 'src/data/verdicts.json'), 'utf8'));
@@ -28,7 +39,7 @@ let unchanged = 0;
 
 async function emit(dir, slug, svg) {
   const file = join(dir, `${slug}.png`);
-  const key = `${dir === verdictDir ? 'v/' : ''}${slug}`;
+  const key = `${dir === verdictDir ? 'v/' : dir === battleDir ? 'vs/' : ''}${slug}`;
   const hash = createHash('sha256').update(svg).digest('hex');
   hashes[key] = hash;
   if (previous[key] === hash && existsSync(file)) {
@@ -50,6 +61,7 @@ function prune(dir, expected) {
 }
 
 mkdirSync(verdictDir, { recursive: true });
+mkdirSync(battleDir, { recursive: true });
 const cards = buildCards(data);
 for (const card of cards) await emit(outDir, card.slug, renderVerdictSvg(card));
 const vCards = buildVerdictPageCards(verdicts, panicFor);
@@ -62,10 +74,28 @@ await Promise.all(
     }
   }),
 );
-const stale = prune(outDir, new Set(cards.map((c) => `${c.slug}.png`))) + prune(verdictDir, new Set(vCards.map((c) => `${c.slug}.png`)));
+const bySlug = new Map(verdicts.verdicts.map((v) => [v.slug, v]));
+const fighter = (slug) => {
+  const v = bySlug.get(slug);
+  if (!v) throw new Error(`og-cards: battle pair names ${slug}, which has no verdict`);
+  return { slug: v.slug, title: v.title, obs: v.obs, band: v.band, projectedChangePct: v.projectedChangePct };
+};
+const refereePng = await sharp(join(root, 'art', 'index-battle-executioner.png')).resize(244, 366, { fit: 'cover' }).png().toBuffer();
+const battleArt = {
+  referee: `data:image/png;base64,${refereePng.toString('base64')}`,
+  robot: robotSvg('pinkslip', { id: 'og-battle', width: 80 }),
+};
+const battles = BATTLE_PAIRS.map(([a, b]) => battleView(fighter(a), fighter(b)));
+for (const view of battles) {
+  await emit(battleDir, view.key, renderBattleSvg({ ...view, edition: verdicts.meta.edition }, battleArt));
+}
+const stale =
+  prune(outDir, new Set(cards.map((c) => `${c.slug}.png`))) +
+  prune(verdictDir, new Set(vCards.map((c) => `${c.slug}.png`))) +
+  prune(battleDir, new Set(battles.map((v) => `${v.key}.png`)));
 mkdirSync(dirname(hashFile), { recursive: true });
 writeFileSync(hashFile, JSON.stringify(hashes));
 
 console.log(
-  `og-cards: ${cards.length} occupation/site cards + ${vCards.length} verdict-page cards — ${written} written, ${unchanged} unchanged, ${stale} stale removed → public/og/`,
+  `og-cards: ${cards.length} occupation/site cards + ${vCards.length} verdict-page cards + ${battles.length} battle cards — ${written} written, ${unchanged} unchanged, ${stale} stale removed → public/og/`,
 );

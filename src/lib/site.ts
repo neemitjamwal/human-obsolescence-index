@@ -8,6 +8,7 @@ export type NavItem = { label: string; href: string };
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Front page', href: '/' },
   { label: 'Leaderboard', href: '/leaderboard/' },
+  { label: "Who's safer?", href: '/vs/' },
   { label: 'Methodology', href: '/methodology/' },
   { label: 'Press', href: '/press/' },
   { label: 'About', href: '/about/' },
