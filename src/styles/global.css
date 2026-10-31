@@ -446,6 +446,9 @@
   .change-decline { color: var(--color-red); }
   .change-growth { color: var(--color-blue); }
   .change-flat { color: var(--color-muted); }
+  /* On yellow rows red is 3.79:1 and blue 4.12:1, both under 4.5:1 for the 13px delta; the glyph keeps the direction. */
+  .ledger-list > li:first-child > .ledger-row[data-rank='1'] .ledger-delta,
+  a.ledger-row:hover .ledger-delta { color: var(--color-ink); }
 
   /* BLS official category: a boxed government label, never confused with the Doom Score. */
   .category-chip {
