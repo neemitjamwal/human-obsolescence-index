@@ -1,0 +1,19 @@
+{
+  "description": "Hand-computed OBS fixture. Percentile = (average rank - 1) / (n - 1) among rows that have the measure; Trajectory ranks the negated employment change. Expected values were worked out by hand, not by the pipeline.",
+  "rows": [
+    { "soc": "91-0001", "msft": 0.4, "eldBetas": [0.6, 0.8], "changePercent": -10 },
+    { "soc": "91-0002", "msft": 0.3, "eldBetas": [0.5], "changePercent": -2 },
+    { "soc": "91-0003", "msft": null, "eldBetas": [0.9], "changePercent": 5 },
+    { "soc": "91-0004", "msft": 0.1, "eldBetas": [0.2], "changePercent": 12 },
+    { "soc": "91-0005", "msft": 0.2, "eldBetas": [], "changePercent": 0 },
+    { "soc": "91-0006", "msft": 0.3, "eldBetas": [0.4], "changePercent": -2 }
+  ],
+  "expected": {
+    "91-0001": { "eld": 0.7, "pMsft": 1, "pEld": 0.75, "pTrajectory": 1, "exposure": 87.5, "trajectory": 100, "obs": 92, "missing": [] },
+    "91-0002": { "eld": 0.5, "pMsft": 0.625, "pEld": 0.5, "pTrajectory": 0.7, "exposure": 56.25, "trajectory": 70, "obs": 61, "missing": [] },
+    "91-0003": { "eld": 0.9, "pMsft": null, "pEld": 1, "pTrajectory": 0.2, "exposure": 100, "trajectory": 20, "obs": 72, "missing": ["microsoft"] },
+    "91-0004": { "eld": 0.2, "pMsft": 0, "pEld": 0, "pTrajectory": 0, "exposure": 0, "trajectory": 0, "obs": 0, "missing": [] },
+    "91-0005": { "eld": null, "pMsft": 0.25, "pEld": null, "pTrajectory": 0.4, "exposure": 25, "trajectory": 40, "obs": 30, "missing": ["eloundou"] },
+    "91-0006": { "eld": 0.4, "pMsft": 0.625, "pEld": 0.25, "pTrajectory": 0.7, "exposure": 43.75, "trajectory": 70, "obs": 53, "missing": [] }
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "generatedFor": "2026-Q4",
+  "sources": [
+    {
+      "id": "bls-ai-exposure",
+      "name": "BLS AI exposure categories and 2025–35 employment projections",
+      "publisher": "U.S. Bureau of Labor Statistics, Employment Projections program",
+      "url": "https://www.bls.gov/emp/ind-occ-matrix/ai-exposure-categories.xlsx",
+      "methodologyUrl": "https://www.bls.gov/emp/publications/ai-exposure-categories.htm",
+      "file": "ai-exposure-categories.xlsx",
+      "retrievedAt": "2026-10-31T00:08:56.812Z",
+      "sha256": "51f5779feea35b89d9c688970ebb9d2e03fca514b39a5100b66faa88abffb52b",
+      "bytes": 98102,
+      "license": "U.S. public domain (17 U.S.C. § 105)",
+      "licenseUrl": "https://www.bls.gov/opub/copyright-information.htm",
+      "citation": "U.S. Bureau of Labor Statistics, Employment Projections program. \"AI exposure categories and 2025–35 employment projections\" (ai-exposure-categories.xlsx). https://www.bls.gov/emp/ind-occ-matrix/ai-exposure-categories.xlsx"
+    },
+    {
+      "id": "bls-ep",
+      "name": "BLS Employment Projections 2025–35, occupation tables (Table 1.2, Table 1.5)",
+      "publisher": "U.S. Bureau of Labor Statistics, Employment Projections program",
+      "url": "https://www.bls.gov/emp/ind-occ-matrix/occupation.xlsx",
+      "methodologyUrl": "https://www.bls.gov/emp/tables.htm",
+      "file": "occupation.xlsx",
+      "retrievedAt": "2026-10-31T00:08:58.214Z",
+      "sha256": "08ee182f992d972593e64559ce467bad75967d2228f11ad5e2f86d4ec0ee6c00",
+      "bytes": 413524,
+      "license": "U.S. public domain (17 U.S.C. § 105)",
+      "licenseUrl": "https://www.bls.gov/opub/copyright-information.htm",
+      "citation": "U.S. Bureau of Labor Statistics, Employment Projections program. \"Occupational projections, 2025–35, and worker characteristics, 2025\" (Table 1.2) and \"Fastest declining occupations\" (Table 1.5), occupation.xlsx. https://www.bls.gov/emp/ind-occ-matrix/occupation.xlsx"
+    },
+    {
+      "id": "bls-oews",
+      "name": "BLS Occupational Employment and Wage Statistics, May 2025 national estimates",
+      "publisher": "U.S. Bureau of Labor Statistics, OEWS program",
+      "url": "https://www.bls.gov/oes/special-requests/oesm25nat.zip",
+      "methodologyUrl": "https://www.bls.gov/oes/",
+      "file": "oesm25nat.zip (national_M2025_dl.xlsx)",
+      "retrievedAt": "2026-10-31T00:08:58.852Z",
+      "sha256": "b5855a37f3e03e779f6fbf173d3bbc94aeeff33426aef32fa95ce6d025bab1af",
+      "bytes": 279525,
+      "license": "U.S. public domain (17 U.S.C. § 105)",
+      "licenseUrl": "https://www.bls.gov/opub/copyright-information.htm",
+      "citation": "U.S. Bureau of Labor Statistics. Occupational Employment and Wage Statistics, May 2025 National Occupational Employment and Wage Estimates (oesm25nat.zip). https://www.bls.gov/oes/special-requests/oesm25nat.zip"
+    },
+    {
+      "id": "bls-crosswalk",
+      "name": "BLS O*NET-SOC to National Employment Matrix crosswalk",
+      "publisher": "U.S. Bureau of Labor Statistics, Office of Occupational Statistics and Employment Projections",
+      "url": "https://www.bls.gov/emp/classifications-crosswalks/nem-onet-to-soc-crosswalk.xlsx",
+      "methodologyUrl": "https://www.bls.gov/emp/classifications-crosswalks/",
+      "file": "nem-onet-to-soc-crosswalk.xlsx",
+      "retrievedAt": "2026-10-31T00:08:59.827Z",
+      "sha256": "cf3c6e6cf1198f9896a0e280c7503f6cc2202be0660d5decff9c4562c78556e3",
+      "bytes": 94441,
+      "license": "U.S. public domain (17 U.S.C. § 105)",
+      "licenseUrl": "https://www.bls.gov/opub/copyright-information.htm",
+      "citation": "U.S. Bureau of Labor Statistics. \"O*NET-SOC to National Employment Matrix (NEM) crosswalk\" (nem-onet-to-soc-crosswalk.xlsx). https://www.bls.gov/emp/classifications-crosswalks/nem-onet-to-soc-crosswalk.xlsx"
+    },
+    {
+      "id": "msft-ai-applicability",
+      "name": "Microsoft Research \"Working with AI\" AI applicability scores",
+      "publisher": "Microsoft Research",
+      "url": "https://raw.githubusercontent.com/microsoft/working-with-ai/main/ai_applicability_scores.csv",
+      "methodologyUrl": "https://arxiv.org/abs/2507.07935",
+      "file": "ai_applicability_scores.csv",
+      "retrievedAt": "2026-10-31T00:09:01.070Z",
+      "sha256": "204c7e6a5ec704156212f88a6282dba7508c8b90e5df7c0d590088b2b44aa7d2",
+      "bytes": 50018,
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "citation": "Tomlinson, K., Jaffe, S., Wang, W., Counts, S., & Suri, S. (2026). \"Working with AI: Measuring the Applicability of Generative AI to Occupations.\" NeurIPS 2026. arXiv:2507.07935. Data: github.com/microsoft/working-with-ai (CC BY 4.0)."
+    },
+    {
+      "id": "openai-gpts-are-gpts",
+      "name": "Eloundou et al. \"GPTs are GPTs\" occupation-level exposure (dv_rating_beta)",
+      "publisher": "OpenAI / University of Pennsylvania",
+      "url": "https://raw.githubusercontent.com/openai/GPTs-are-GPTs/main/data/occ_level.csv",
+      "methodologyUrl": "https://doi.org/10.1126/science.adj0998",
+      "file": "occ_level.csv",
+      "retrievedAt": "2026-10-31T00:09:01.823Z",
+      "sha256": "40c74f53de40aec91c0017d80690cbba915f83a8bb414bcf2f884692f1749acb",
+      "bytes": 126022,
+      "license": "MIT",
+      "licenseUrl": "https://github.com/openai/GPTs-are-GPTs/blob/main/LICENSE",
+      "citation": "Eloundou, T., Manning, S., Mishkin, P., & Rock, D. (2024). \"GPTs are GPTs: Labor market impact potential of LLMs.\" Science 384, 1306–1308. Data: github.com/openai/GPTs-are-GPTs (MIT)."
+    },
+    {
+      "id": "onet-31",
+      "name": "O*NET 31.0 Database (Task Statements, Task Ratings, Related Occupations)",
+      "publisher": "National Center for O*NET Development, U.S. Department of Labor, Employment and Training Administration",
+      "url": "https://www.onetcenter.org/dl_files/database/db_31_0_text.zip",
+      "methodologyUrl": "https://www.onetcenter.org/database.html",
+      "file": "db_31_0_text.zip",
+      "retrievedAt": "2026-10-31T00:09:17.599Z",
+      "sha256": "6883548adf5fde64cf6f801b35d15519c9225f2732c3cab0e281c652d16b23a9",
+      "bytes": 13183034,
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://www.onetcenter.org/license_db.html",
+      "citation": "This site incorporates information from the O*NET 31.0 Database (https://www.onetcenter.org/database.html) by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license. O*NET® is a trademark of USDOL/ETA."
+    },
+    {
+      "id": "hoi-composite",
+      "name": "Human Obsolescence Index composite (Exposure, Trajectory, OBS)",
+      "publisher": "Human Obsolescence Index",
+      "url": "/methodology/",
+      "retrievedAt": "2026-10-31",
+      "sha256": null,
+      "derivedFrom": [
+        "msft-ai-applicability",
+        "openai-gpts-are-gpts",
+        "bls-crosswalk",
+        "bls-ep"
+      ],
+      "license": "CC BY 4.0 (derived data; upstream licenses apply)",
+      "citation": "Human Obsolescence Index, 2026-Q4 edition. Computed from BLS Employment Projections 2025–35, Microsoft Working-with-AI, and Eloundou et al. (2024). Formula: OBS = round(0.65 × Exposure + 0.35 × Trajectory)."
+    }
+  ]
+}
