@@ -38,6 +38,14 @@ const TYPESETTER: MuseumExhibit = {
     'Typesetters assembled every printed word in metal type for 500 years, until photocomposition (1960s–70s) and then desktop publishing (from the mid-1980s) turned type into software.',
 };
 
+const LECTOR: MuseumExhibit = {
+  slug: 'lector',
+  name: 'Lector (cigar factory reader)',
+  headline: 'The Lector',
+  context:
+    'Lectors were hired by cigar workers themselves to read newspapers and novels aloud all day from a platform above the factory floor. After the Ybor City strike of 1931 they were banned; radio and mechanization finished the job.',
+};
+
 /** SOC 2018 code → Museum of Extinct Jobs exhibit. Every key must be an occupation the Index publishes. */
 export const MUSEUM_PRECEDENTS: Record<string, MuseumPrecedent> = {
   '43-4051': { exhibit: SWITCHBOARD, why: 'Same brief, a century apart: pick up, answer, route the caller.' },
@@ -54,6 +62,9 @@ export const MUSEUM_PRECEDENTS: Record<string, MuseumPrecedent> = {
   '43-9031': { exhibit: TYPESETTER, why: 'Desktop publishing killed the typesetter. The heir is now on this exchange.' },
   '43-6012': { exhibit: TYPESETTER, why: 'Producing documents letter by letter was skilled work, until type became software.' },
   '27-4021': { exhibit: TYPESETTER, why: 'A visual craft that software on a desk swallowed once already. The museum\'s Wing V keeps the stock-photo receipts.' },
+  '27-1013': { exhibit: TYPESETTER, why: 'A visual craft that software on a desk swallowed once already. The museum\'s Wing V keeps the image-generator receipts.' },
+  '23-2011': { exhibit: TYPESETTER, why: 'Producing documents letter by letter was skilled work, until type became software.' },
+  '27-2011': { exhibit: LECTOR, why: 'A paid human voice, performing for a room, was replaced once already: by the radio.' },
 };
 
 export function museumExhibitUrl(exhibit: Pick<MuseumExhibit, 'slug'>): string {

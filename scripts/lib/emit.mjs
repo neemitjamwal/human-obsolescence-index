@@ -1,5 +1,5 @@
 import { writeFileSync } from 'node:fs';
-import { ADJACENT_ROLES, CONTRAST_SOCS, EDITION, LEADERBOARD, TASKS_PER_OCCUPATION, WEIGHTS } from './config.mjs';
+import { ADJACENT_ROLES, CONTRAST_SOCS, EDITION, LEADERBOARD, MUSEUM_PRECEDENT_SOCS, TASKS_PER_OCCUPATION, WEIGHTS } from './config.mjs';
 
 const r2 = (x) => (x == null ? null : Math.round(x * 100) / 100);
 const r4 = (x) => (x == null ? null : Math.round(x * 10000) / 10000);
@@ -212,6 +212,10 @@ export function buildMeta({ universe, selection, fastestDeclining, downloads, mi
     forcedInclusions: {
       fastestDeclining: { source: 'BLS EP Table 1.5, Fastest declining occupations', sourceId: 'bls-ep', socs: fastestDeclining },
       contrast: { reason: 'Low-OBS, high-visibility occupations kept for honest contrast', socs: CONTRAST_SOCS },
+      museumPrecedent: {
+        reason: 'Occupations the Museum of Extinct Jobs AI wing links to, tracked so every museum link has a page',
+        socs: MUSEUM_PRECEDENT_SOCS,
+      },
     },
     selectedCount: selection.selected.length,
     universeFieldSources: {

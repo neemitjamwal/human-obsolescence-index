@@ -29,6 +29,9 @@ describe('museum precedents (Index data)', () => {
     expect(exhibitFor('43-6012')).toBe('typesetter');
     expect(exhibitFor('13-2011')).toBe('human-computer');
     expect(exhibitFor('27-4021')).toBe('typesetter');
+    expect(exhibitFor('27-2011')).toBe('lector');
+    expect(exhibitFor('23-2011')).toBe('typesetter');
+    expect(exhibitFor('27-1013')).toBe('typesetter');
   });
 
   it('renders "Historical precedent: The … thought so too" headlines and absolute exhibit URLs', () => {
@@ -64,8 +67,9 @@ describe.skipIf(!existsSync(museumExhibits))('museum precedents resolve against 
 
 describe.skipIf(!existsSync(museumAiWing))('museum AI-wing links point at Index pages', () => {
   let links: { soc: string; title: string; slug: string }[];
+  let source: string;
   beforeAll(() => {
-    const source = readFileSync(museumAiWing, 'utf8');
+    source = readFileSync(museumAiWing, 'utf8');
     links = [...source.matchAll(/indexCrosslink: \{\s*soc: '([^']+)',\s*title: '([^']+)',\s*slug: '([^']+)'/g)].map((m) => ({
       soc: m[1],
       title: m[2],
@@ -74,12 +78,22 @@ describe.skipIf(!existsSync(museumAiWing))('museum AI-wing links point at Index 
   });
 
   it('finds the museum links and every one matches a published occupation', () => {
-    expect(links.length).toBe(9);
+    expect(links.length).toBe(10);
     for (const l of links) {
       const o = OCCUPATIONS.find((x) => x.soc === l.soc);
       expect(o, `SOC ${l.soc}`).toBeDefined();
       expect(o!.slug).toBe(l.slug);
       expect(o!.title).toBe(l.title);
+    }
+  });
+
+  it('force-includes every SOC the museum links as a museum precedent, with no gaps left', () => {
+    expect(source).not.toMatch(/indexGap:/);
+    const linked = [...source.matchAll(/soc: '(\d{2}-\d{4})'/g)].map((m) => m[1]);
+    expect(linked.length).toBeGreaterThanOrEqual(10);
+    for (const soc of linked) {
+      expect(META.forcedInclusions.museumPrecedent.socs, soc).toContain(soc);
+      expect(OCCUPATIONS.find((o) => o.soc === soc)?.inclusion, soc).toContain('museum-precedent');
     }
   });
 });

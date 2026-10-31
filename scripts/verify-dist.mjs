@@ -124,6 +124,18 @@ rankedRows.forEach((row, i) => {
   }
   if (i > 0 && row.obs > rankedRows[i - 1].obs) failures.push(`home leaderboard OBS rises at row ${i + 1}`);
 });
+// Museum-linked occupations off the board are labeled as tracked, never ranked.
+for (const soc of data.meta.forcedInclusions.museumPrecedent.socs) {
+  const o = data.occupations.find((x) => x.soc === soc);
+  if (!o) {
+    failures.push(`museum-linked SOC ${soc} has no occupation page`);
+    continue;
+  }
+  if (o.leaderboardRank != null) continue;
+  const html = readDist(`occupations/${o.slug}/index.html`) ?? '';
+  if (!html.includes('Tracked off-board') || !html.includes('Museum of Extinct Jobs exhibit')) failures.push(`occupations/${o.slug}/ is not labeled as a tracked museum-linked occupation`);
+  if (rankedRows.some((r) => r.slug === o.slug)) failures.push(`museum-linked ${o.slug} appears on the ranked board`);
+}
 // Museum precedents: every mapped occupation page links its exhibit on the museum's production domain.
 const { MUSEUM_PRECEDENTS, museumExhibitUrl, precedentHeadline } = await import('../src/data/precedents.ts');
 let precedentLinks = 0;
@@ -374,6 +386,11 @@ const about = unescape(readDist('about/index.html') ?? '');
 for (const needle of ['O*NET 31.0 Database', 'CC BY 4.0', 'Microsoft', 'OpenAI', 'MIT License', 'U.S. Bureau of Labor Statistics', 'public domain']) {
   if (!about.includes(needle)) failures.push(`about page licensing credits are missing "${needle}"`);
 }
+// Long credit text (the O*NET citation URL) must wrap instead of overflowing a 390px viewport.
+const creditItems = [...about.matchAll(/<li class="([^"]*)"[^>]*data-credit=/g)].map((m) => m[1]);
+if (creditItems.length === 0 || creditItems.some((cls) => !cls.includes('[overflow-wrap:anywhere]'))) failures.push('about page credit cards do not wrap long URLs (overflow-wrap:anywhere)');
+if (!/class="[^"]*\[overflow-wrap:anywhere\][^"]*"[^>]*data-cite-only-list/.test(about)) failures.push('about page cite-only list does not wrap long URLs (overflow-wrap:anywhere)');
+if (!css.includes('overflow-wrap:anywhere') && !css.includes('overflow-wrap: anywhere')) failures.push('compiled CSS has no overflow-wrap:anywhere rule');
 for (const host of ['weforum.org', 'layoffs.fyi']) {
   if (!new RegExp(`<a [^>]*href="https://(www\\.)?${host.replace('.', '\\.')}[^"]*"[^>]*data-cite-only`).test(about)) failures.push(`about page has no labeled cite-only link to ${host}`);
 }

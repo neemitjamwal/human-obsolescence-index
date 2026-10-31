@@ -110,5 +110,20 @@ export const LEADERBOARD = { minOesEmployment: 50000, size: 120 };
 // Low-OBS, high-visibility occupations kept on the board as honest contrast picks.
 export const CONTRAST_SOCS = ['29-1141', '47-2111', '33-3051', '47-2152'];
 
+// Every occupation the Museum of Extinct Jobs AI wing (Wing V) links to, so each museum link lands on a real page.
+// Tracked off the board unless the occupation already ranks on its own.
+export const MUSEUM_PRECEDENT_SOCS = [
+  '43-4051', // Customer service representatives (customer service, call-center/BPO)
+  '15-1252', // Software developers
+  '23-2011', // Paralegals and legal assistants
+  '27-3091', // Interpreters and translators
+  '27-2011', // Actors (voice actors)
+  '43-9021', // Data entry keyers
+  '13-2011', // Accountants and auditors
+  '27-4021', // Photographers
+  '27-1013', // Fine artists, including painters, sculptors, and illustrators
+  '43-4171', // Receptionists and information clerks
+];
+
 export const TASKS_PER_OCCUPATION = { min: 3, max: 5 };
 export const ADJACENT_ROLES = { min: 2, max: 4 };

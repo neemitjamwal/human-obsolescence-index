@@ -116,6 +116,24 @@ describe('universe rules', () => {
     for (const o of contrast) expect(o.scores.obs.value).toBeLessThan(data.meta.leaderboard.cutoffObs);
   });
 
+  it('publishes every museum-linked occupation as a tracked page without ranking it', () => {
+    const socs: string[] = data.meta.forcedInclusions.museumPrecedent.socs;
+    expect(socs).toEqual(expect.arrayContaining(['27-2011', '23-2011', '27-1013']));
+    for (const soc of socs) {
+      const o = occupations.find((x) => x.soc === soc);
+      expect(o, soc).toBeDefined();
+      expect(o.inclusion).toContain('museum-precedent');
+      expect(o.scores.obs.value).not.toBeNull();
+      if (!o.inclusion.includes('leaderboard')) expect(o.leaderboardRank).toBeNull();
+    }
+    for (const soc of ['27-2011', '23-2011', '27-1013']) {
+      const o = occupations.find((x) => x.soc === soc);
+      expect(o.inclusion).toEqual(['museum-precedent']);
+      expect(o.leaderboardRank).toBeNull();
+    }
+    expect(occupations.filter((o) => o.leaderboardRank != null)).toHaveLength(120);
+  });
+
   it('ranks emitted occupations by OBS descending with unique slugs', () => {
     const obs = occupations.map((o) => o.scores.obs.value);
     expect(obs).toEqual([...obs].sort((a, b) => b - a));

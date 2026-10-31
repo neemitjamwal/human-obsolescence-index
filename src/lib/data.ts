@@ -116,6 +116,7 @@ export type Meta = {
   forcedInclusions: {
     fastestDeclining: { source: string; sourceId: string; socs: string[] };
     contrast: { reason: string; socs: string[] };
+    museumPrecedent: { reason: string; socs: string[] };
   };
   selectedCount: number;
 };
@@ -144,7 +145,7 @@ export function leaderboard(): Occupation[] {
   return OCCUPATIONS.filter((o) => o.leaderboardRank != null).sort((a, b) => a.leaderboardRank! - b.leaderboardRank!);
 }
 
-/** Forced inclusions that missed the board (fastest-declining and contrast picks), highest OBS first. */
+/** Forced inclusions that missed the board (fastest-declining, contrast and museum-linked picks), highest OBS first. */
 export function alsoTracked(): Occupation[] {
   return OCCUPATIONS.filter((o) => o.leaderboardRank == null).sort(
     (a, b) => (b.scores.obs.value ?? -1) - (a.scores.obs.value ?? -1) || a.title.localeCompare(b.title),
@@ -182,6 +183,8 @@ export function inclusionLabel(reason: string): string {
       return 'BLS fastest-declining';
     case 'contrast':
       return 'Contrast pick';
+    case 'museum-precedent':
+      return 'Museum of Extinct Jobs exhibit';
     default:
       return reason;
   }

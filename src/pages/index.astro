@@ -86,7 +86,8 @@ const rowProps = (o: Occupation) => ({
     <h2 id="tracked-title" class="font-display text-xl font-bold uppercase tracking-wide">Also on the floor</h2>
     <p class="prose-block mt-2 mb-4 text-dim">
       Not ranked, but tracked: every occupation on BLS's fastest-declining list that missed the board, plus a few
-      low-scoring contrast picks such as registered nurses and electricians. A shrinking job is not always an AI story.
+      low-scoring contrast picks such as registered nurses and electricians, plus the occupations the Museum of Extinct
+      Jobs AI wing links to, such as actors and paralegals. A shrinking job is not always an AI story.
     </p>
     <Ledger caption={`${tracked.length} tracked occupations outside the ranked board, highest OBS first`} id="tracked">
       {tracked.map((o) => <LedgerRow rank={null} {...rowProps(o)} />)}
