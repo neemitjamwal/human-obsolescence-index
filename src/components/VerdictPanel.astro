@@ -1,0 +1,99 @@
+---
+import CiteLink from './CiteLink.astro';
+import Robot from './Robot.astro';
+import { ART, artSrc, artSrcset } from '../data/art';
+import { categoryClass } from '../lib/ledger';
+import { ROBOT_POSES, ROBOT_POSE_BY_BAND } from '../lib/robots';
+import type { VerdictRecord, VerdictView } from '../lib/verdict-view';
+
+interface Props {
+  view: VerdictView;
+  record: VerdictRecord;
+  boardSize: number;
+  heading?: 'h1' | 'h2';
+  /** Cite to on-page receipts (verdict pages) instead of the methodology source list. */
+  local?: boolean;
+  /** Unique per page; seeds the robot SVG ids. */
+  idPrefix?: string;
+}
+
+const { view, record, boardSize, heading = 'h2', local = false, idPrefix = 'verdict' } = Astro.props;
+const Tag = heading;
+const burstTone = view.band === 'low' ? 'burst-blue' : view.band === 'moderate' ? 'burst-ink' : '';
+const stampTone = view.band === 'low' ? 'stamp-blue' : view.band === 'moderate' ? 'stamp-ink' : '';
+const pose = ROBOT_POSE_BY_BAND[view.band];
+const photo = ART.verdictRobot;
+---
+
+<article
+  class="verdict box-yellow"
+  aria-labelledby="verdict-h"
+  data-verdict
+  data-slug={view.slug}
+  data-band={view.band}
+  data-edition={view.edition}
+  data-board-size={boardSize}
+  data-verdict-record={JSON.stringify(record)}
+>
+  <div class="verdict-siren" aria-hidden="true"></div>
+  <div class="verdict-countdown" data-countdown aria-hidden="true" hidden>
+    <span class="verdict-countdown-k">Stop the presses</span>
+    <span class="verdict-countdown-n" data-countdown-n>3</span>
+  </div>
+  <div class="verdict-body">
+    <p class="verdict-stinger"><span data-vf="stinger">{view.stinger}</span></p>
+    <p class="kicker mt-3" data-vf="kicker">{view.kicker}</p>
+    <Tag id="verdict-h" class="verdict-h">
+      <span class="verdict-job"><span class="hl" data-vf="title">{view.title}</span></span><span class="sr-only">: </span>
+      <span class="verdict-head" data-vf="headline">{view.headline}</span>
+    </Tag>
+    <div class="verdict-splash mt-4">
+      <div class="splash">
+        <div class:list={['burst verdict-burst', burstTone]} role="img" aria-label={`Doom Score ${view.score} out of 100`} data-v-burst>
+          <span class="burst-n" aria-hidden="true" data-vf="score" data-obs-score={view.score}>{view.score}</span>
+          <span class="burst-of" aria-hidden="true">Doom Score<br />out of 100</span>
+        </div>
+        <div class="grid gap-2">
+          <p class:list={['stamp verdict-stamp', stampTone]} data-vf="bandLabel">{view.bandLabel}</p>
+          <p class="fact font-bold" data-vf="rankLine">{view.rankLine}</p>
+          <p class="fact" data-vf="changeLine">{view.changeLine}</p>
+          <p class="fact" data-vf="exposureLine">{view.exposureLine}</p>
+          <p class="fact">
+            BLS official AI exposure category:{' '}
+            <span class:list={['category-chip', categoryClass(record.blsCategory)]} title="Official BLS AI exposure category" data-v-chip>
+              <span class="chip-source">BLS</span><span data-vf="blsCategory">{view.blsCategory}</span>
+            </span>
+          </p>
+        </div>
+      </div>
+      <figure class="verdict-robot" data-v-robot-photo>
+        <picture>
+          <source type="image/avif" srcset={artSrcset(photo, 'avif')} sizes="(min-width: 64rem) 15rem, 42vw" />
+          <source type="image/webp" srcset={artSrcset(photo, 'webp')} sizes="(min-width: 64rem) 15rem, 42vw" />
+          <img src={artSrc(photo, 320, 'webp')} width={photo.width} height={photo.height} alt={photo.alt} loading="lazy" decoding="async" />
+        </picture>
+        <figcaption class="bubble"><span class="sr-only">The robot says: </span><span data-vf="robotLine">{view.robotLine}</span></figcaption>
+      </figure>
+    </div>
+    <div class="verdict-roast-row mt-5">
+      <p class="roast verdict-roast" data-vf="roast" data-roast-id={record.roastId}>{view.roast}</p>
+      <div class="verdict-cameo">
+        {
+          ROBOT_POSES.map((p) => (
+            <span data-v-pose={p} hidden={p !== pose}>
+              <Robot pose={p} id={`${idPrefix}-${p}`} />
+            </span>
+          ))
+        }
+      </div>
+    </div>
+    <p class="fine verdict-fine mt-4" data-disclaimer-fine>
+      <span data-vf="fine">{view.fine}</span>
+      {' '}<a href="/methodology/" class="font-bold">How the Doom Score works →</a>
+    </p>
+    <p class="kicker mt-2">
+      Sources: <CiteLink id="hoi-composite" local={local} /> · <CiteLink id="bls-ep" local={local} /> ·
+      {' '}<CiteLink id="bls-ai-exposure" local={local} />
+    </p>
+  </div>
+</article>

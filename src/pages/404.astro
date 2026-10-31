@@ -1,0 +1,34 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="No such page" description="This page is not in the Human Obsolescence Index. Type your job on the front page or browse the full leaderboard.">
+  <div class="mx-auto max-w-3xl px-4 pb-12 pt-10 md:px-6">
+    <section class="box-yellow p-6" aria-labelledby="nf-h" data-not-found>
+      <p class="kicker text-red">Correction · Page not found</p>
+      <h1 id="nf-h" class="section-h mt-2">We have no story on file here</h1>
+      <p class="prose-block mt-3" data-not-found-detail>
+        The link may be mistyped, or the page was never printed. We will not guess a verdict for a job we have not scored.
+      </p>
+      <p class="mt-5 flex flex-wrap gap-3">
+        <a class="btn btn-red" href="/">Type your job</a>
+        <a class="btn" href="/leaderboard/">Browse the full leaderboard</a>
+      </p>
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  const m = /^\/v\/([^/]+)\/?$/.exec(location.pathname);
+  const detail = document.querySelector<HTMLElement>('[data-not-found-detail]');
+  if (m && detail) {
+    let slug = m[1];
+    try {
+      slug = decodeURIComponent(slug);
+    } catch {}
+    const words = slug.replace(/[^\p{L}\p{N}]+/gu, ' ').trim().slice(0, 60);
+    detail.textContent = words
+      ? `There is no verdict for “${words}”. The link may be mistyped. We will not guess a verdict for a job we have not scored.`
+      : detail.textContent;
+  }
+</script>

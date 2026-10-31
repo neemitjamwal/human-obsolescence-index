@@ -9,7 +9,7 @@ interface Props {
 const { items, label = 'Breaking news ticker' } = Astro.props;
 ---
 
-<section class="ticker" aria-label={label} data-ticker>
+<section class="ticker" aria-label={label} tabindex="0" data-ticker>
   <div class="ticker-track">
     {
       [false, true].map((duplicate) => (

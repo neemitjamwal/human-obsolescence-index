@@ -1,5 +1,6 @@
 export const SITE_NAME = 'Human Obsolescence Index';
 export const MASTHEAD = 'The Daily Doom';
+export const SITE_DOMAIN = 'humanobsolescenceindex.com';
 export const SITE_TAGLINE = 'The front page for human work: occupations ranked by a Doom Score built from AI exposure and projected job growth, with receipts.';
 
 export type NavItem = { label: string; href: string };

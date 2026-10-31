@@ -1,69 +1,91 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import CategoryChip from '../components/CategoryChip.astro';
-import CiteLink from '../components/CiteLink.astro';
+import SharePanel from '../components/SharePanel.astro';
+import VerdictPanel from '../components/VerdictPanel.astro';
+import { ART, artSrc, artSrcset } from '../data/art';
 import { leaderboard, META, occupationPath } from '../lib/data';
-import { formatJobs, formatSignedPercent } from '../lib/format';
-import { BAND_LABELS, scoreBand } from '../lib/ledger';
+import { scoreBand } from '../lib/ledger';
+import { NAME_MAX } from '../lib/name';
+import { VERDICTS, VERDICTS_META } from '../lib/verdicts';
+import { verdictRecord } from '../lib/verdict-feed';
+import { verdictView } from '../lib/verdict-view';
 
 const board = leaderboard();
-const top = board[0];
-const topObs = top.scores.obs.value!;
-const topBand = BAND_LABELS[scoreBand(topObs)];
 const shame = board.slice(0, 10);
 const u = META.universe;
+const hero = ART.hero;
+// Server-rendered placeholder so the panel's layout exists before the first lookup; the zone stays hidden until then.
+const sampleRecord = verdictRecord(VERDICTS[0]);
+const sampleView = verdictView(sampleRecord, { edition: VERDICTS_META.edition, boardSize: META.leaderboard.size });
 ---
 
 <BaseLayout
   masthead="full"
-  description={`The ${META.edition} Human Obsolescence Index: ${board.length} occupations ranked by a Doom Score built from AI exposure and BLS projected employment change, every number with its source.`}
+  description={`Robot uprising edition: type your job and get its Doom Score. ${u.obsScored} occupations scored from AI exposure research and BLS projected employment change, every number with its source.`}
 >
-  <!--
-    HERO SLOT. The "Type your job" combobox, name field, verdict reveal and share cards replace the contents of
-    this section (feature index-verdict-hero-and-share). Keep the data-hero-slot attribute on the replacement.
-  -->
-  <section class="mx-auto grid max-w-6xl gap-6 px-4 pb-10 pt-8 md:px-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start" aria-labelledby="hero-title" data-hero-slot>
-    <div>
-      <h1 id="hero-title" class="hook-h">Type your job.<br /><span class="hl">We print the headline.</span></h1>
-      <p class="prose-block mt-5 font-bold">
-        {u.obsScored} occupations scored. {board.length} on the board. Every number traced to a public source. The
-        search box goes to press next edition; until then, find your job on the full board.
-      </p>
-      <p class="mt-6 flex flex-wrap gap-3">
-        <a class="btn btn-red" href="/leaderboard/">See all {board.length} on the Doom Index →</a>
-        <a class="btn" href="/methodology/">How we score it</a>
-      </p>
-    </div>
+  <link slot="head" rel="preload" as="image" type="image/avif" imagesrcset={artSrcset(hero, 'avif')} imagesizes="100vw" fetchpriority="high" />
 
-    <article class="box-yellow anim-slam p-4 md:p-5" aria-labelledby="splash-title" data-front-splash>
-      <p class="kicker text-red">Exclusive · Job No. {top.soc}</p>
-      <h2 id="splash-title" class="mt-2 font-display text-[clamp(2.3rem,9vw,4.25rem)] uppercase leading-[0.92]">
-        <a href={occupationPath(top.slug)} class="no-underline hover:text-ink">{top.title}: #1 on the Doom Index</a>
-      </h2>
-      <div class="splash mt-4">
-        <div class="burst anim-spin" role="img" aria-label={`Doom Score ${topObs} out of 100`}>
-          <span class="burst-n" aria-hidden="true">{topObs}</span>
-          <span class="burst-of" aria-hidden="true">Doom Score<br />out of 100</span>
+  <section class="hero-uprising" aria-labelledby="hero-title" data-hero-slot data-hero>
+    <picture class="hero-art">
+      <source type="image/avif" srcset={artSrcset(hero, 'avif')} sizes="100vw" />
+      <source type="image/webp" srcset={artSrcset(hero, 'webp')} sizes="100vw" />
+      <img src={artSrc(hero, 1024, 'webp')} width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async" data-hero-art />
+    </picture>
+    <div class="hero-inner mx-auto max-w-6xl px-4 md:px-6">
+      <p class="eyebrow eyebrow-red siren-tag">Breaking · Robot uprising</p>
+      <h1 id="hero-title" class="hero-h mt-3">
+        <span class="hero-h-line">Robot uprising:</span>
+        <span class="hero-h-line"><span class="hl">your job is next</span></span>
+      </h1>
+      <p class="hero-dek mt-3"><span>The machines are coming for your task list. Type your job. We print the headline.</span></p>
+
+      <form class="job-search box mt-5" role="search" aria-label="Find your job's Doom Score" data-job-form novalidate>
+        <label class="job-label" for="job-input">Type your job</label>
+        <div class="job-row">
+          <div class="job-combo">
+            <input
+              id="job-input"
+              class="job-input"
+              type="text"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="job-list"
+              aria-describedby="job-hint"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="e.g. accountant, coder, barista"
+              data-job-input
+            />
+            <ul id="job-list" class="job-list" role="listbox" aria-label="Matching jobs" hidden data-job-list></ul>
+          </div>
+          <button type="submit" class="btn btn-red job-go">Print my verdict</button>
         </div>
-        <div class="grid gap-2">
-          <p class="stamp anim-thud">{topBand}</p>
-          <p class="fact"><b>#1</b> of {board.length}, most doomed on the board</p>
-          <p class="fact">
-            BLS projects <b>{formatSignedPercent(top.projectedChange.percent.value)}</b> by 2035:
-            {' '}<b>{formatJobs(top.employment.value)} → {formatJobs(top.projectedChange.employment2035.value)}</b> jobs
-          </p>
-          <p class="fact">BLS official AI exposure category: <CategoryChip category={top.blsCategory.value} /></p>
+        <p id="job-hint" class="fine mt-2">{u.obsScored} occupations, matched on official titles plus O*NET alternate and reported titles. Arrow keys choose, Enter picks.</p>
+        <p class="sr-only" role="status" aria-live="polite" data-job-status></p>
+        <div class="name-row mt-3">
+          <label class="kicker" for="name-input">Put your first name in the paper <span class="name-opt">(optional, never leaves your device)</span></label>
+          <input id="name-input" class="name-input" type="text" maxlength={NAME_MAX * 3} autocomplete="given-name" aria-describedby="name-hint" data-name-input />
+          <p id="name-hint" class="fine mt-1">Letters, spaces, hyphens, apostrophes and periods, up to {NAME_MAX} characters. <span data-name-echo aria-live="polite"></span></p>
         </div>
-      </div>
-      <p class="fine mt-4">
-        AI exposure ≠ job loss. Doom Score = 65% AI exposure (Microsoft + OpenAI research) + 35% BLS 2025–35 projection.
-        Sources: <CiteLink id="hoi-composite" /> · <CiteLink id="bls-ep" /> · <CiteLink id="bls-ai-exposure" /> ·
-        humanobsolescenceindex.com
-      </p>
-    </article>
+      </form>
+    </div>
   </section>
 
-  <section class="mx-auto max-w-6xl border-t-[6px] border-double border-ink px-4 pt-8 md:px-6" aria-labelledby="shame-title">
+  <section class="verdict-zone mx-auto max-w-6xl px-4 pt-8 md:px-6" aria-label="Your verdict" hidden data-verdict-zone>
+    <div class="no-match box p-4 md:p-5" hidden data-no-match tabindex="-1">
+      <p class="eyebrow">Stop the presses</p>
+      <h2 class="section-h mt-3">No job called “<span data-no-match-q></span>” in our files</h2>
+      <p class="prose-block mt-3 font-bold" data-no-match-intro></p>
+      <ul class="no-match-list mt-3" data-no-match-list></ul>
+      <p class="mt-4"><a class="btn btn-yellow" href="/leaderboard/">Browse the full Doom Index →</a></p>
+    </div>
+    <VerdictPanel view={sampleView} record={sampleRecord} boardSize={META.leaderboard.size} idPrefix="home" />
+    <div class="mt-8"><SharePanel /></div>
+  </section>
+
+  <section class="mx-auto mt-10 max-w-6xl border-t-[6px] border-double border-ink px-4 pt-8 md:px-6" aria-labelledby="shame-title">
     <h2 id="shame-title" class="page-h">Hall of <span class="hl-red">shame</span></h2>
     <p class="prose-block mt-3 font-bold">The {shame.length} most doomed jobs on the board, by Doom Score. Each one has its own page of receipts.</p>
     <ol class="ledger ledger-list ledger-compact mt-5" aria-label={`Top ${shame.length} occupations by Doom Score`} data-home-shame>
@@ -85,6 +107,13 @@ const u = META.universe;
       }
     </ol>
     <p class="mt-6"><a class="btn btn-yellow" href="/leaderboard/">The full board: all {board.length} →</a></p>
-    <p class="fine mt-4">AI exposure ≠ job loss. Exposure measures what AI can do to an occupation's tasks, not whether the job disappears · humanobsolescenceindex.com</p>
+    <p class="fine mt-4">AI exposure ≠ job loss. Exposure measures what AI can do to an occupation's tasks, not whether the job disappears. <a href="/methodology/">How we score it</a></p>
   </section>
 </BaseLayout>
+
+<script>
+  import { initHero } from '../lib/hero';
+
+  const root = document.querySelector<HTMLElement>('[data-hero]');
+  if (root) initHero(root);
+</script>

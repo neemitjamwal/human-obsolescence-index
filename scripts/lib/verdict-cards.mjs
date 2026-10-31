@@ -212,3 +212,104 @@ export function renderVerdictSvg(card) {
 </svg>
 `;
 }
+
+/**
+ * One card per /v/<slug>/ verdict page (every scored occupation), in the robot-uprising treatment.
+ * @param {{ meta: any; verdicts: any[] }} file verdicts.json
+ * @param {(v: any) => { headline: string; stinger: string; robotLine: string }} panicFor src/data/roasts.ts
+ */
+export function buildVerdictPageCards(file, panicFor) {
+  return file.verdicts.map((v) => {
+    const panic = panicFor(v);
+    return {
+      slug: v.slug,
+      soc: v.soc,
+      edition: file.meta.edition,
+      title: v.title,
+      obs: v.obs,
+      band: bandFor(v.obs),
+      category: v.blsCategory ?? null,
+      headline: panic.headline,
+      stinger: panic.stinger,
+      robotLine: panic.robotLine,
+    };
+  });
+}
+
+/** Places a standalone robot SVG (src/lib/robots.ts) inside the card at (x, y). */
+function placeSvg(svg, x, y, width, height) {
+  return svg
+    .replace(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/, `<svg x="${x}" y="${y}"`)
+    .replace(/ width="\d+" height="\d+"/, ` width="${width}" height="${height}"`);
+}
+
+export function renderVerdictPageSvg(card, robot) {
+  const W = OG_WIDTH;
+  const H = OG_HEIGHT;
+  const pad = 52;
+  const leftW = 700;
+  const stinger = card.stinger.toUpperCase();
+  const stingerW = Math.min(leftW, Math.round(stinger.length * 26 * 0.52 + 32));
+
+  const title = fitTitle(card.title.toUpperCase(), { width: leftW, sizes: [58, 52, 46, 40, 36, 32], maxLines: 3 });
+  const lineH = Math.round(title.size * 1.12);
+  const titleTop = 214;
+  const titleLines = title.lines
+    .map((l, i) => {
+      const baseline = titleTop + title.size * 0.86 + i * lineH;
+      const hw = Math.min(leftW + 16, Math.round(l.length * title.size * 0.5 + 18));
+      return `<rect x="${pad - 8}" y="${Math.round(baseline - title.size * 0.88)}" width="${hw}" height="${Math.round(title.size * 1.04)}" fill="${C.yellow}"/>
+  <text x="${pad}" y="${baseline}" font-family="${DISPLAY}" font-size="${title.size}" fill="${C.ink}">${escapeXml(l)}</text>`;
+    })
+    .join('\n  ');
+  let y = titleTop + title.lines.length * lineH + 26;
+  const head = wrapText(card.headline.toUpperCase(), 40).slice(0, 2);
+  const headLines = head
+    .map((l, i) => `<text x="${pad}" y="${y + 24 + i * 32}" font-family="${BODY}" font-size="26" font-weight="900" fill="${C.red}" data-headline="">${escapeXml(l)}</text>`)
+    .join('\n  ');
+  y += head.length * 32 + 18;
+  const chip = categoryChip(card.category, pad, Math.min(y, 478));
+
+  const band = card.band;
+  const size = 270;
+  const bx = 830;
+  const by = 150;
+  const cx = bx + size / 2;
+  const stampColor = band.id === 'low' ? C.blue : band.id === 'moderate' ? C.ink : C.red;
+  const footerY = H - 52;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <defs>
+    <pattern id="dots" width="6" height="6" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1" fill="${C.ink}" fill-opacity="0.09"/>
+    </pattern>
+  </defs>
+  <rect width="${W}" height="${H}" fill="${C.paper}"/>
+  <rect width="${W}" height="${H}" fill="url(#dots)"/>
+  <text x="${pad}" y="34" font-family="${BODY}" font-size="16" font-weight="900" letter-spacing="2" fill="${C.ink}">${escapeXml(card.edition)} EDITION · SOC ${escapeXml(card.soc)}</text>
+  <text x="${W - pad}" y="34" text-anchor="end" font-family="${BODY}" font-size="16" font-weight="900" letter-spacing="2" fill="${C.ink}">HUMAN OBSOLESCENCE INDEX</text>
+  <text x="${W / 2 + 5}" y="117" text-anchor="middle" font-family="${DISPLAY}" font-size="92" fill="${C.ink}">THE DAILY DOOM</text>
+  <text x="${W / 2}" y="112" text-anchor="middle" font-family="${DISPLAY}" font-size="92" fill="${C.red}" stroke="${C.ink}" stroke-width="2">THE DAILY DOOM</text>
+  <rect x="${pad}" y="128" width="${W - pad * 2}" height="4" fill="${C.ink}"/>
+  <rect x="${pad}" y="136" width="${W - pad * 2}" height="4" fill="${C.ink}"/>
+  <rect x="${pad}" y="154" width="${stingerW}" height="42" fill="${C.red}"/>
+  <text x="${pad + 16}" y="184" font-family="${DISPLAY}" font-size="26" letter-spacing="2" fill="${C.white}" data-stinger="">${escapeXml(stinger)}</text>
+  ${titleLines}
+  ${headLines}
+  ${chip}
+  ${burst(bx, by, size, band.color)}
+  <text x="${cx + 4}" y="${by + 180}" text-anchor="middle" font-family="${DISPLAY}" font-size="140" fill="${C.ink}">${card.obs}</text>
+  <text x="${cx}" y="${by + 176}" text-anchor="middle" font-family="${DISPLAY}" font-size="140" fill="${C.white}" data-obs="${card.obs}">${card.obs}</text>
+  <text x="${cx}" y="${by + 206}" text-anchor="middle" font-family="${BODY}" font-size="15" font-weight="900" letter-spacing="2" fill="${C.white}">DOOM SCORE / 100</text>
+  <g transform="rotate(-8 ${cx - 30} ${by + size + 30})">
+    <rect x="${cx - 150}" y="${by + size - 2}" width="240" height="62" fill="${C.white}" fill-opacity="0.75" stroke="${stampColor}" stroke-width="5"/>
+    <text x="${cx - 30}" y="${by + size + 48}" text-anchor="middle" font-family="${DISPLAY}" font-size="46" letter-spacing="3" fill="${stampColor}" data-band="${band.id}">${band.label.toUpperCase()}</text>
+  </g>
+  <rect y="${footerY - 34}" width="${W}" height="${H - footerY + 34}" fill="${C.yellow}"/>
+  <rect y="${footerY - 38}" width="${W}" height="4" fill="${C.ink}"/>
+  <text x="${pad}" y="${footerY + 4}" font-family="${BODY}" font-size="20" font-weight="900" fill="${C.ink}" data-robot-line="">“${escapeXml(card.robotLine)}”</text>
+  <text x="${W - 190}" y="${footerY + 4}" text-anchor="end" font-family="${BODY}" font-size="20" font-weight="900" fill="${C.ink}">humanobsolescenceindex.com</text>
+  ${robot ? placeSvg(robot, W - 170, H - 214, 150, 180) : ''}
+</svg>
+`;
+}

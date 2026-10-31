@@ -1,4 +1,4 @@
-import { ROASTS, ROAST_CONDITIONS, type RoastPlaceholder, type RoastTemplate } from '../data/roasts';
+import { ROASTS, hashKey, linesFor, type RoastPlaceholder, type RoastTemplate } from '../data/roasts';
 import { formatJobs, formatScore, formatSignedPercent, formatUsd } from './format';
 import type { Verdict } from './verdicts';
 
@@ -40,22 +40,14 @@ function fill(t: RoastTemplate, v: Verdict): RenderedRoast | null {
 
 /** Every roast that fits this verdict: its band's templates plus any whose data condition holds. */
 export function roastOptions(v: Verdict, bank: RoastTemplate[] = ROASTS): RenderedRoast[] {
-  const conditions = new Set(ROAST_CONDITIONS.filter((c) => c.test(v)).map((c) => c.id));
-  return bank
-    .filter((t) => (t.band ? t.band === v.band : t.when ? conditions.has(t.when) : false))
+  return linesFor(bank, v)
     .map((t) => fill(t, v))
     .filter((r): r is RenderedRoast => r != null);
-}
-
-function hash(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-  return h >>> 0;
 }
 
 /** One roast per occupation, picked deterministically by SOC code so pages, cards and shares agree. */
 export function renderRoast(v: Verdict, bank: RoastTemplate[] = ROASTS): RenderedRoast {
   const options = roastOptions(v, bank);
   if (!options.length) throw new Error(`no roast fits ${v.soc} (band ${v.band})`);
-  return options[hash(v.soc) % options.length];
+  return options[hashKey(v.soc) % options.length];
 }

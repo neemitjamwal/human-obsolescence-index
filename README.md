@@ -22,20 +22,39 @@ If your system Node is older, run each command through a temporary Node, for exa
 | `npm run build:index` | The data pipeline. Downloads the 7 source files into `.cache/raw/`, parses, joins on SOC codes, scores, and writes `src/data/occupations.json` and `src/data/sources.json`. Cached files are re-validated and reused, so a re-run with the same inputs produces byte-identical JSON |
 | `npm run build:index -- --refresh` | Same, but re-downloads every source (at most one request per 1.1 s) |
 | `npm run dev` | Astro dev server |
-| `npm run build` | Writes the press stat pack (`public/stat-pack/`), renders the OG verdict cards (`og:cards`), then runs `astro build` into `dist/` |
+| `npm run build` | Writes the press stat pack (`public/stat-pack/`), resizes the robot-uprising art in `art/` into responsive AVIF/WebP files in `public/art/` (`scripts/art.mjs`), renders the OG cards (`og:cards`), then runs `astro build` into `dist/` |
 | `npm run preview` | Serves `dist/` |
-| `npm run og:cards` | Renders a 1200×630 terminal-style verdict PNG per occupation (title, OBS score, band, BLS category chip, index mark) plus the site card into `public/og/`. Deterministic and idempotent: unchanged cards are not rewritten, stale ones are removed |
+| `npm run og:cards` | Renders a 1200×630 terminal-style verdict PNG per occupation (title, OBS score, band, BLS category chip, index mark) plus the site card into `public/og/`, and one robot-uprising card per scored occupation for its `/v/<slug>/` verdict page into `public/og/v/`. Deterministic and idempotent: unchanged cards are not rewritten, stale ones are removed |
 | `npm run test` | vitest: deterministic OBS recomputation from a fixture, join sanity (SOC codes, never titles), coverage flags, manifest completeness, page content, OG cards, sitemap/robots, licensing credits and red-list discipline (plus a scan of `dist/` for local URLs, red-list mentions and raw data files when a build exists) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run verify` | Post-build checks on `dist/`: every page and score component, every citation resolving to `sources.json`, leaderboard order, stat pack, methodology quotes, share meta on every page, every `og:image` present as a 1200×630 PNG, a sitemap listing every page, robots.txt, no `localhost`/`127.0.0.1` URLs anywhere in the output, licensing credits on `/about/`, WEF and layoffs.fyi only as labeled cite-only links, and no raw data files beyond the stat pack |
 
 The full gate is `npm run test`, `npm run typecheck`, `npm run build` and `npm run verify`. All four must exit 0. `build` does not run the pipeline: the generated JSON is committed, so Netlify never downloads from BLS.
 
+## Browser testing and accessibility scans
+
+The pages are checked in a real browser with [agent-browser](https://www.npmjs.com/package/agent-browser) at 390×844 and 1280×800 against `npm run preview` (`npx astro preview --port 4521 --host 127.0.0.1`). Accessibility is scanned with the real axe-core engine, installed as a devDependency (`axe-core`) for testing only. It is never imported by the site and never ships in `dist/`.
+
+To scan a page, inject `node_modules/axe-core/axe.min.js` into the open page and run it. The file is too long for a command line, so pass it to `batch` on stdin as JSON (PowerShell):
+
+```powershell
+$src = [IO.File]::ReadAllText("$PWD\node_modules\axe-core\axe.min.js")
+[IO.File]::WriteAllText("$PWD\.cache\axe-batch.json", '[["eval",' + ($src | ConvertTo-Json) + ']]')
+cmd /c "agent-browser --session hoi open http://127.0.0.1:4521/ < NUL"
+cmd /c "agent-browser --session hoi batch < .cache\axe-batch.json"
+$run = 'axe.run(document).then(r => JSON.stringify(r.violations.map(v => [v.id, v.impact, v.nodes.length])))'
+$b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($run))
+cmd /c "agent-browser --session hoi eval -b $b64 < NUL"
+cmd /c "agent-browser --session hoi close < NUL"
+```
+
+The result lists violations as `[id, impact, nodeCount]`; the budget is an empty list on the front page (before and after a verdict is revealed) and on a `/v/<slug>/` verdict page, at both viewport sizes. Also check `prefers-reduced-motion` with `agent-browser set media light reduced-motion`. Report axe's `incomplete` results (usually contrast over halftone or photo backgrounds) separately: zero violations is not a full WCAG audit.
 ## Layout
 
 - `scripts/build-index.mjs` and `scripts/lib/`: the pipeline (`config` pins, `download`, `zip`, `parse`, `join`, `score`, `select`, `emit`).
 - `src/data/occupations.json`, `src/data/sources.json`: generated and committed. Every field is `{ value, sourceId }`.
 - `src/pages/index.astro` (leaderboard), `src/pages/occupations/[slug].astro` (one page per occupation), `methodology`, `press`, `changelog`, `about`.
+- `src/pages/index.astro` hero, `src/lib/hero.ts`: the "Type your job" combobox, which fetches `/data/search-index.json` and `/data/verdicts.json` on first focus. `src/pages/v/[slug].astro`: a static verdict page for every scored occupation. `src/components/VerdictPanel.astro`, `src/lib/verdict-dom.ts`: the verdict and its reveal. `src/components/SharePanel.astro`, `src/lib/share-panel.ts`, `src/lib/card.ts`: the canvas share cards (1080×1920 and 1200×630) and Download / Share / Copy link. `src/data/roasts.ts`: the robot-uprising copy bank. `src/lib/robots.ts`: the cartoon SVG robots.
 - `src/lib/seo.ts`: share descriptions, OG image paths, and the page list behind `sitemap.xml` and `robots.txt`.
 - `scripts/og-cards.mjs` and `scripts/lib/verdict-cards.mjs`: the sharp card renderer. `public/og/` and `public/stat-pack/` are generated and gitignored.
 - `scripts/verify-dist.mjs`: the post-build checks. `scripts/lib/dist-hygiene.mjs`: the local-URL, red-list and raw-data scans shared by `verify` and the tests.

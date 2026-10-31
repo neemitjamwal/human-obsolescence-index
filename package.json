@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "node scripts/stat-pack.mjs && node scripts/og-cards.mjs && astro build",
+    "build": "node scripts/stat-pack.mjs && node scripts/art.mjs && node scripts/og-cards.mjs && astro build",
     "preview": "astro preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "axe-core": "^4.14.0",
     "exceljs": "^4.4.0",
     "sharp": "^0.35.5",
     "typescript": "^7.0.2",

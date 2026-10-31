@@ -1,0 +1,17 @@
+---
+import { ROBOT_LABELS, robotSvg, type RobotPose } from '../lib/robots';
+
+interface Props {
+  pose: RobotPose;
+  /** Unique on the page; seeds the SVG pattern id. */
+  id: string;
+  /** Decorative robots are hidden from assistive tech. */
+  decorative?: boolean;
+  class?: string;
+}
+
+const { pose, id, decorative = false, class: className } = Astro.props;
+const svg = robotSvg(pose, { id, label: decorative ? undefined : ROBOT_LABELS[pose], className });
+---
+
+<Fragment set:html={svg} />

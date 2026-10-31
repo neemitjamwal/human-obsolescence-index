@@ -1,0 +1,154 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CiteLink from '../../components/CiteLink.astro';
+import ReceiptList from '../../components/ReceiptList.astro';
+import Robot from '../../components/Robot.astro';
+import SharePanel from '../../components/SharePanel.astro';
+import VerdictPanel from '../../components/VerdictPanel.astro';
+import { META, occupationPath } from '../../lib/data';
+import { formatJobs, formatScore, formatSignedPercent, formatUsd } from '../../lib/format';
+import { ROBOT_LABELS, ROBOT_POSES } from '../../lib/robots';
+import { verdictImageAlt, verdictDescription, verdictOgPath } from '../../lib/seo';
+import { VERDICTS, VERDICTS_META, type Verdict } from '../../lib/verdicts';
+import { verdictRecord } from '../../lib/verdict-feed';
+import { DISCLAIMER_SHORT, verdictView } from '../../lib/verdict-view';
+
+export function getStaticPaths() {
+  return VERDICTS.map((v) => ({ params: { slug: v.slug }, props: { v } }));
+}
+
+const { v } = Astro.props as { v: Verdict };
+const record = verdictRecord(v);
+const view = verdictView(record, { edition: VERDICTS_META.edition, boardSize: META.leaderboard.size });
+const ids = v.sourceIds;
+const receipts = [...new Set(['hoi-composite', 'msft-ai-applicability', 'openai-gpts-are-gpts', 'bls-ep', 'bls-oews', 'bls-ai-exposure', 'onet-31', ...Object.values(ids)])].filter(Boolean) as string[];
+const numbers = [
+  { label: 'Doom Score (OBS)', value: `${v.obs} of 100`, cite: ids.obs ?? 'hoi-composite', key: 'obs' },
+  { label: 'AI exposure (percentile)', value: v.exposure == null ? 'not scored' : `${formatScore(v.exposure)} of 100`, cite: ids.exposure ?? 'hoi-composite', key: 'exposure' },
+  { label: 'BLS projected employment change, 2025–35', value: formatSignedPercent(v.projectedChangePct), cite: ids.projectedChangePct ?? 'bls-ep', key: 'projectedChangePct' },
+  { label: 'Employment, 2025', value: formatJobs(v.employment), cite: ids.employment ?? 'bls-ep', key: 'employment' },
+  { label: 'Median annual wage', value: formatUsd(v.medianWage), cite: ids.medianWage ?? 'bls-oews', key: 'medianWage' },
+  { label: 'BLS official AI exposure category', value: v.blsCategory ?? 'Not rated', cite: ids.blsCategory ?? 'bls-ai-exposure', key: 'blsCategory' },
+];
+---
+
+<BaseLayout
+  title={`${v.title}: Doom Score ${v.obs}/100`}
+  description={verdictDescription(v)}
+  image={verdictOgPath(v.slug)}
+  imageAlt={verdictImageAlt(v)}
+  type="article"
+>
+  <div class="mx-auto max-w-6xl px-4 pb-4 pt-8 md:px-6">
+    <p class="kicker"><a href="/">← Type another job</a></p>
+    <div class="mt-4" data-verdict-page>
+      <VerdictPanel view={view} record={record} boardSize={META.leaderboard.size} heading="h1" local idPrefix="v" />
+    </div>
+
+    <aside class="disclaimer mt-6" aria-label="What this score means" data-disclaimer>
+      <p class="sub-h">{DISCLAIMER_SHORT}</p>
+      <p class="mt-2">
+        The robots are theatre. The numbers are not. A Doom Score ranks how much of an occupation's task list AI research says AI can
+        touch (65%) and how BLS projects its employment to change from 2025 to 2035 (35%). It is not a forecast that this job disappears,
+        and it says nothing about any one person. <a href="/methodology/" class="font-bold">Read the methodology</a>.
+      </p>
+    </aside>
+
+    <section class="mt-10" aria-labelledby="numbers-h">
+      <h2 id="numbers-h" class="section-h">The <span class="hl">receipts</span></h2>
+      <div class="table-scroll mt-4" role="region" aria-label="Receipts table" tabindex="0">
+        <table class="data-table">
+          <thead><tr><th scope="col">Number</th><th scope="col" class="num">Value</th><th scope="col">Source</th></tr></thead>
+          <tbody>
+            {
+              numbers.map((n) => (
+                <tr data-key-number={n.key}>
+                  <th scope="row">{n.label}</th>
+                  <td class="num">{n.value}</td>
+                  <td><CiteLink id={n.cite} local /></td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      {v.topTask && (
+        <p class="prose-block mt-4" data-top-task>
+          <span class="kicker">Top task in O*NET 31.0:</span> {v.topTask} <CiteLink id={ids.topTask ?? 'onet-31'} local />
+        </p>
+      )}
+    </section>
+
+    {
+      v.hasFullPage ? (
+        <section class="box-ink mt-10 p-5" aria-labelledby="full-h" data-full-page-link>
+          <h2 id="full-h" class="sub-h">The full file is open</h2>
+          <p class="mt-2">Every score component, the tasks AI touches, adjacent roles and the complete receipts.</p>
+          <p class="mt-4"><a class="btn btn-yellow" href={occupationPath(v.slug)}>Read the full {v.title} file →</a></p>
+        </section>
+      ) : (
+        <section class="mt-10" aria-labelledby="components-h" data-compact-components>
+          <h2 id="components-h" class="section-h">How the score is built</h2>
+          <p class="prose-block mt-3">
+            This occupation is scored but does not have a full page this edition. Here are the two components and the blend.
+          </p>
+          <div class="table-scroll mt-4" role="region" aria-label="Score components table" tabindex="0">
+            <table class="data-table">
+              <thead><tr><th scope="col">Component</th><th scope="col" class="num">Value</th><th scope="col">What it is</th><th scope="col">Sources</th></tr></thead>
+              <tbody>
+                <tr data-component="exposure">
+                  <th scope="row">AI exposure (percentile)</th>
+                  <td class="num">{formatScore(v.exposure)}</td>
+                  <td>Percentile of the Microsoft AI applicability and OpenAI GPTs-are-GPTs task scores, blended</td>
+                  <td><CiteLink id="msft-ai-applicability" local /> · <CiteLink id="openai-gpts-are-gpts" local /> · <CiteLink id={ids.exposure ?? 'hoi-composite'} local /></td>
+                </tr>
+                <tr data-component="trajectory">
+                  <th scope="row">Trajectory (percentile)</th>
+                  <td class="num">{formatScore(v.trajectory)}</td>
+                  <td>Percentile of BLS projected employment change, negated: higher means weaker projected change</td>
+                  <td><CiteLink id="bls-ep" local /> · <CiteLink id={ids.trajectory ?? 'hoi-composite'} local /></td>
+                </tr>
+                <tr data-component="obs" class="row-total">
+                  <th scope="row">Doom Score (OBS)</th>
+                  <td class="num">{v.obs}</td>
+                  <td>round(0.65 × exposure + 0.35 × trajectory)</td>
+                  <td><CiteLink id={ids.obs ?? 'hoi-composite'} local /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )
+    }
+
+    <section class="mt-10" aria-labelledby="suspects-h">
+      <h2 id="suspects-h" class="section-h">The usual <span class="hl-red">suspects</span></h2>
+      <p class="prose-block mt-2">Fictional villains for a real dataset. None of them did the math; the receipts below did.</p>
+      <ul class="robot-lineup mt-4" data-robot-lineup>
+        {
+          ROBOT_POSES.map((p) => (
+            <li>
+              <Robot pose={p} id={`lineup-${p}`} />
+              <span class="kicker">{ROBOT_LABELS[p].replace('Cartoon robot with glowing red eyes ', '')}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <div class="mt-10"><SharePanel /></div>
+
+    <section class="mt-10" aria-labelledby="receipts-h">
+      <h2 id="receipts-h" class="section-h">Sources</h2>
+      <div class="mt-4"><ReceiptList ids={receipts} /></div>
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  import { initVerdictPage } from '../../lib/verdict-page';
+
+  const panel = document.querySelector<HTMLElement>('[data-verdict-page] [data-verdict]');
+  const share = document.querySelector<HTMLElement>('[data-share-panel]');
+  if (panel && share) initVerdictPage(panel, share);
+</script>

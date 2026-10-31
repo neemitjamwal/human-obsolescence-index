@@ -42,6 +42,13 @@ const SOURCE_FILES = [
   'scripts/lib/verdict-cards.mjs',
   'src/data/roasts.ts',
   'src/lib/roast.ts',
+  'src/lib/verdict-view.ts',
+  'src/lib/card.ts',
+  'src/lib/hero.ts',
+  'src/lib/verdict-dom.ts',
+  'src/components/VerdictPanel.astro',
+  'src/components/SharePanel.astro',
+  'src/pages/v/[slug].astro',
 ];
 
 const plain = (html: string) =>

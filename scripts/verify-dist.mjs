@@ -389,7 +389,10 @@ else {
   for (const o of data.occupations) {
     if (!listed.has(`${SITE}/occupations/${o.slug}/`)) failures.push(`sitemap.xml does not list /occupations/${o.slug}/`);
   }
-  const pagePaths = htmlFiles.map((f) => `/${f.slice(dist.length + 1).replace(/\\/g, '/').replace(/index\.html$/, '')}`);
+  // 404.html is served for unknown URLs and is deliberately not in the sitemap.
+  const pagePaths = htmlFiles
+    .map((f) => `/${f.slice(dist.length + 1).replace(/\\/g, '/').replace(/index\.html$/, '')}`)
+    .filter((p) => p !== '/404.html');
   for (const p of pagePaths) if (!listed.has(`${SITE}${p}`)) failures.push(`sitemap.xml does not list ${p}`);
   if (sitemapUrls.length !== pagePaths.length) failures.push(`sitemap.xml lists ${sitemapUrls.length} URLs for ${pagePaths.length} pages`);
 }
@@ -418,6 +421,65 @@ if (!css.includes('overflow-wrap:anywhere') && !css.includes('overflow-wrap: any
 for (const host of ['weforum.org', 'layoffs.fyi']) {
   if (!new RegExp(`<a [^>]*href="https://(www\\.)?${host.replace('.', '\\.')}[^"]*"[^>]*data-cite-only`).test(about)) failures.push(`about page has no labeled cite-only link to ${host}`);
 }
+// ---- /v/<slug>/ verdict pages: one per scored occupation, with Doom Score, disclaimer, sources and a 1200x630 card ----
+const verdictsFile = JSON.parse(readFileSync(join(root, 'src/data/verdicts.json'), 'utf8'));
+let verdictPages = 0;
+for (const v of verdictsFile.verdicts) {
+  const rel = `v/${v.slug}/index.html`;
+  const html = readDist(rel);
+  if (!html) {
+    failures.push(`dist/${rel} is missing`);
+    continue;
+  }
+  verdictPages += 1;
+  if (!html.includes(`data-obs-score="${v.obs}"`)) failures.push(`${rel} does not show Doom Score ${v.obs}`);
+  if (!html.includes('AI exposure ≠ job loss') || !html.includes('data-disclaimer')) failures.push(`${rel} has no on-page disclaimer`);
+  if (!html.includes('href="/methodology/"')) failures.push(`${rel} does not link the methodology`);
+  if (!html.includes('data-share-panel')) failures.push(`${rel} has no share panel`);
+  if ((html.match(/data-robot-pose="/g) ?? []).length < 4) failures.push(`${rel} shows fewer than 4 robot poses`);
+  if (v.hasFullPage) {
+    if (!html.includes(`href="/occupations/${v.slug}/"`)) failures.push(`${rel} does not link its full occupation page`);
+  } else {
+    for (const c of ['exposure', 'trajectory', 'obs']) if (!html.includes(`data-component="${c}"`)) failures.push(`${rel} is missing compact component ${c}`);
+  }
+  if (!html.includes('data-source-id=')) failures.push(`${rel} has no source receipts`);
+  if (metaContent(html, 'og:image') !== `${SITE}/og/v/${v.slug}.png`) failures.push(`${rel} og:image is not ${SITE}/og/v/${v.slug}.png`);
+}
+if (verdictPages !== verdictsFile.verdicts.length) failures.push(`${verdictPages} verdict pages built for ${verdictsFile.verdicts.length} scored occupations`);
+const ogVerdictCards = existsSync(join(dist, 'og', 'v')) ? readdirSync(join(dist, 'og', 'v')).filter((f) => f.endsWith('.png')).length : 0;
+if (ogVerdictCards !== verdictsFile.verdicts.length) failures.push(`dist/og/v has ${ogVerdictCards} cards for ${verdictsFile.verdicts.length} verdicts`);
+
+// ---- Home hero: combobox, lazy data, initial JS budget ----
+if (!/role="combobox"/.test(frontPage) || !/aria-controls="[^"]+"/.test(frontPage)) failures.push('front page has no ARIA combobox job search');
+if (frontPage.includes('data-verdict-feed=') || /"verdicts":\[/.test(frontPage)) failures.push('front page inlines the verdict feed instead of fetching it lazily');
+if (!readDist('data/verdicts.json')) failures.push('dist/data/verdicts.json is missing');
+/** Gzip bytes of the module scripts the front page loads up front: its script tags plus their static imports. */
+function initialJsGzip(html) {
+  const seen = new Set();
+  const queue = [...html.matchAll(/<script[^>]*type="module"[^>]*src="(\/_astro\/[^"]+\.js)"/g)].map((m) => m[1].slice(1));
+  let bytes = [...html.matchAll(/<script[^>]*type="module"[^>]*>([\s\S]*?)<\/script>/g)].reduce((n, m) => n + gzipSync(m[1]).length, 0);
+  while (queue.length) {
+    const rel = queue.shift();
+    if (seen.has(rel)) continue;
+    seen.add(rel);
+    const js = readDist(rel);
+    if (js == null) continue;
+    bytes += gzipSync(js).length;
+    for (const m of js.matchAll(/(?:^|[;}\s])import\s*(?:[\w${},*\s]+from\s*)?["'](\.\/[^"']+\.js)["']/g)) queue.push(`_astro/${m[1].slice(2)}`);
+  }
+  for (const m of html.matchAll(/<script[^>]*type="module"[^>]*>([\s\S]*?)<\/script>/g)) {
+    for (const i of m[1].matchAll(/import\s*(?:[\w${},*\s]+from\s*)?["'](\/_astro\/[^"']+\.js)["']/g)) {
+      const rel = i[1].slice(1);
+      if (!seen.has(rel)) {
+        seen.add(rel);
+        bytes += gzipSync(readDist(rel) ?? '').length;
+      }
+    }
+  }
+  return bytes;
+}
+const homeJsGzip = initialJsGzip(frontPage);
+if (homeJsGzip > 60 * 1024) failures.push(`front page initial JS is ${(homeJsGzip / 1024).toFixed(1)} KB gzip, budget 60 KB`);
 if (failures.length > 0) {
   console.error('verify-dist FAILED:');
   for (const f of failures) console.error(`  - ${f}`);
@@ -430,6 +492,6 @@ console.log(
     `(${(cssBytes / 1024).toFixed(1)} KB) with all Daily Doom tokens and no v1 tokens, ticker + hero slot on home, ledger on /leaderboard/, no localhost URLs; ` +
     `${occupationPages} occupation pages with all components (${citationLinks} citation links, all resolving to sources.json), ` +
     `${precedentLinks} museum precedent links, embed widget with ${embedEntriesCount} occupations, ${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes (${growthBranches.stronger} stronger-growth, ${growthBranches.weaker} weaker-growth), stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
-    `search index ${(searchIndexGzip / 1024).toFixed(1)} KB gzip; ${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
+    `search index ${(searchIndexGzip / 1024).toFixed(1)} KB gzip; ${verdictPages} /v/ verdict pages + ${ogVerdictCards} verdict OG cards; front page initial JS ${(homeJsGzip / 1024).toFixed(1)} KB gzip; ${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
     `${textFiles.length} text files free of localhost/127.0.0.1, red-list sources only as cite-only links, licensing credits on /about/`,
 );
