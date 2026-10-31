@@ -67,6 +67,14 @@ export function createJobCombobox(o: JobComboboxOptions): JobCombobox {
     return `${s.title}, Doom Score ${s.obs}${s.kind !== 'title' ? `, matched ${s.matched}` : ''}`;
   }
 
+  function srOnly(text: string): HTMLSpanElement {
+    const span = document.createElement('span');
+    span.className = 'sr-only';
+    span.textContent = text;
+    return span;
+  }
+
+  // The accessible name comes from the visible content (plus sr-only glue) so it matches what sighted users see.
   function renderOptions(items: Suggestion[], query = '') {
     options = items;
     optionsQuery = query;
@@ -75,7 +83,6 @@ export function createJobCombobox(o: JobComboboxOptions): JobCombobox {
       li.id = `${idPrefix}-${i}`;
       li.setAttribute('role', 'option');
       li.setAttribute('aria-selected', 'false');
-      li.setAttribute('aria-label', optionLabel(s));
       li.className = 'job-opt';
       const title = document.createElement('span');
       title.className = 'job-opt-title';
@@ -84,12 +91,12 @@ export function createJobCombobox(o: JobComboboxOptions): JobCombobox {
       if (s.kind !== 'title') {
         const via = document.createElement('span');
         via.className = 'job-opt-via';
-        via.textContent = s.note ? `“${s.matched}”: ${s.note}` : `also called “${s.matched}”`;
+        via.append(srOnly(', '), s.note ? `“${s.matched}”: ${s.note}` : `also called “${s.matched}”`);
         li.append(via);
       }
       const score = document.createElement('span');
       score.className = 'job-opt-score';
-      score.textContent = String(s.obs);
+      score.append(srOnly(', Doom Score '), String(s.obs));
       li.append(score);
       li.addEventListener('mousedown', (e) => e.preventDefault());
       li.addEventListener('click', () => void o.onChoose(s));

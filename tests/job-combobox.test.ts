@@ -15,14 +15,20 @@ class FakeEl {
   value = '';
   textContent = '';
   children: FakeEl[] = [];
+  /** Children in order, with text nodes kept as strings. */
+  nodes: (FakeEl | string)[] = [];
   attrs = new Map<string, string>();
   listeners = new Map<string, ((e: unknown) => void)[]>();
   classList = { toggle: (_c: string, _on?: boolean) => {} };
   setAttribute(k: string, v: string) { this.attrs.set(k, v); }
   getAttribute(k: string) { return this.attrs.get(k) ?? null; }
   removeAttribute(k: string) { this.attrs.delete(k); }
-  append(...c: FakeEl[]) { this.children.push(...c); }
-  replaceChildren(...c: FakeEl[]) { this.children = c; }
+  append(...c: (FakeEl | string)[]) {
+    this.nodes.push(...c);
+    this.children.push(...c.filter((n): n is FakeEl => typeof n !== 'string'));
+  }
+  replaceChildren(...c: FakeEl[]) { this.children = c; this.nodes = c; }
+  get text(): string { return this.textContent + this.nodes.map((n) => (typeof n === 'string' ? n : n.text)).join(''); }
   addEventListener(type: string, fn: (e: unknown) => void) { this.listeners.set(type, [...(this.listeners.get(type) ?? []), fn]); }
   dispatch(type: string, e: Record<string, unknown> = {}) { for (const fn of this.listeners.get(type) ?? []) fn({ preventDefault() {}, ...e }); }
   querySelectorAll(_sel: string) { return this.children.filter((c) => c.getAttribute('role') === 'option'); }
@@ -63,12 +69,48 @@ function setup() {
   return { input, list, status, submitted, type, key, activeOption };
 }
 
-describe('job combobox keeps the highlight in step with the suggestions', () => {
+function stubDom() {
   beforeEach(() => {
     vi.stubGlobal('document', { createElement: () => new FakeEl() });
     vi.stubGlobal('requestAnimationFrame', (cb: () => void) => cb());
   });
   afterEach(() => vi.unstubAllGlobals());
+}
+
+describe('job combobox options take their accessible name from their content', () => {
+  stubDom();
+
+  it('options have no aria-label and their text holds the title and the Doom Score', async () => {
+    const c = setup();
+    await c.type('tele');
+    const items = matcher('tele');
+    expect(c.list.children).toHaveLength(items.length);
+    c.list.children.forEach((li, i) => {
+      expect(li.getAttribute('aria-label')).toBeNull();
+      expect(li.text).toContain(items[i].title);
+      expect(li.text).toContain(`, Doom Score ${items[i].obs}`);
+    });
+  });
+
+  it('an alias match still reads the alias it matched', async () => {
+    const queries = ['lawyer', 'cashier', 'coder', 'nurse', 'driver', 'teacher', 'cook', 'writer', 'clerk'];
+    const q = queries.find((x) => matcher(x).some((s) => s.kind !== 'title'));
+    expect(q).toBeDefined();
+    const items = matcher(q!);
+    const c = setup();
+    await c.type(q!);
+    items.forEach((s, i) => {
+      const li = c.list.children[i];
+      expect(li.getAttribute('aria-label')).toBeNull();
+      expect(li.text).toContain(s.title);
+      expect(li.text).toContain(`Doom Score ${s.obs}`);
+      if (s.kind !== 'title') expect(li.text).toContain(`“${s.matched}”`);
+    });
+  });
+});
+
+describe('job combobox keeps the highlight in step with the suggestions', () => {
+  stubDom();
 
   it('"tele", ArrowDown x5, then "m": the stale fifth highlight is dropped and Enter picks a real option', async () => {
     expect(matcher('tele')).toHaveLength(5);
