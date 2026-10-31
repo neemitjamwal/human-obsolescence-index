@@ -30,7 +30,7 @@ export const STANFORD_CANARIES_PAPER: Reference = {
   publisher: 'Stanford Institute for Economic Policy Research (SIEPR)',
   title:
     'Canaries in the Coal Mine? Six Facts about the Recent Employment Effects of Artificial Intelligence (Brynjolfsson, Chandar & Chen)',
-  date: '2026-08',
+  date: '2025-08',
   url: 'https://siepr.stanford.edu/publications/working-paper/canaries-coal-mine-six-facts-about-recent-employment-effects-artificial',
 };
 
