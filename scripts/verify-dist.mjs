@@ -59,6 +59,7 @@ const manifestText = readFileSync(join(root, 'src/data/sources.json'), 'utf8');
 const manifest = JSON.parse(manifestText);
 const knownSources = new Set(manifest.sources.map((s) => s.id));
 const readDist = (rel) => (existsSync(join(dist, rel)) ? readFileSync(join(dist, rel), 'utf8') : null);
+const unescapeHtml = (s) => s.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
 const attrValues = (html, attr) => [...html.matchAll(new RegExp(`${attr}="([^"]*)"`, 'g'))].map((m) => m[1]);
 
 for (const page of ['changelog/index.html']) {
@@ -122,6 +123,42 @@ rankedRows.forEach((row, i) => {
   }
   if (i > 0 && row.obs > rankedRows[i - 1].obs) failures.push(`home leaderboard OBS rises at row ${i + 1}`);
 });
+// Museum precedents: every mapped occupation page links its exhibit on the museum's production domain.
+const { MUSEUM_PRECEDENTS, museumExhibitUrl, precedentHeadline } = await import('../src/data/precedents.ts');
+let precedentLinks = 0;
+for (const [soc, p] of Object.entries(MUSEUM_PRECEDENTS)) {
+  const o = data.occupations.find((x) => x.soc === soc);
+  if (!o) {
+    failures.push(`museum precedent for SOC ${soc} has no occupation page`);
+    continue;
+  }
+  const html = readDist(`occupations/${o.slug}/index.html`) ?? '';
+  if (!html.includes(`href="${museumExhibitUrl(p.exhibit)}"`)) failures.push(`occupations/${o.slug}/ does not link ${museumExhibitUrl(p.exhibit)}`);
+  else precedentLinks += 1;
+  if (!unescapeHtml(html).includes(precedentHeadline(p))) failures.push(`occupations/${o.slug}/ is missing "${precedentHeadline(p)}"`);
+}
+
+// Embed widget: self-contained page with ticker, lookup data, snippet and attribution.
+const embed = readDist('embed/index.html');
+let embedEntriesCount = 0;
+if (!embed) failures.push('dist/embed/index.html is missing');
+else {
+  for (const marker of ['data-embed-widget', 'data-embed-ticker', 'data-embed-lookup', 'data-embed-snippet', 'data-embed-attribution']) {
+    if (!embed.includes(marker)) failures.push(`embed page has no ${marker}`);
+  }
+  if (!embed.includes('&lt;iframe src=&quot;https://humanobsolescenceindex.com/embed/&quot;') && !embed.includes('&lt;iframe src="https://humanobsolescenceindex.com/embed/"')) {
+    failures.push('embed page does not show the iframe snippet');
+  }
+  if (!/<a href="https:\/\/humanobsolescenceindex\.com\/"[^>]*data-embed-attribution/.test(embed)) failures.push('embed attribution does not link the Index home');
+  if (/<script[^>]*\ssrc=|<link[^>]*rel="stylesheet"|fonts\.googleapis/.test(embed)) failures.push('embed page loads an external script, stylesheet or font');
+  const json = /<script type="application\/json" id="hoi-data">([\s\S]*?)<\/script>/.exec(embed)?.[1];
+  try {
+    embedEntriesCount = JSON.parse(json ?? 'null')?.length ?? 0;
+  } catch {
+    embedEntriesCount = 0;
+  }
+  if (embedEntriesCount !== board.length) failures.push(`embed page carries ${embedEntriesCount} occupations, expected ${board.length}`);
+}
 for (const o of data.occupations) {
   if (!home.includes(`href="/occupations/${o.slug}/"`)) failures.push(`home does not link /occupations/${o.slug}/`);
 }
@@ -340,7 +377,7 @@ console.log(
   `verify-dist OK: ${htmlFiles.length} HTML page(s), nav targets present, ${cssFiles.length} CSS bundle(s) ` +
     `(${(cssBytes / 1024).toFixed(1)} KB) with all Exchange tokens, ticker + ledger on home, no localhost URLs; ` +
     `${occupationPages} occupation pages with all components (${citationLinks} citation links, all resolving to sources.json), ` +
-    `${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes (${growthBranches.stronger} stronger-growth, ${growthBranches.weaker} weaker-growth), stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
+    `${precedentLinks} museum precedent links, embed widget with ${embedEntriesCount} occupations, ${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes (${growthBranches.stronger} stronger-growth, ${growthBranches.weaker} weaker-growth), stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
     `${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
     `${textFiles.length} text files free of localhost/127.0.0.1`,
 );

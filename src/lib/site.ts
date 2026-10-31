@@ -1,6 +1,5 @@
 export const SITE_NAME = 'Human Obsolescence Index';
 export const SITE_TAGLINE = 'A stock exchange for human worth: occupations ranked by AI exposure and projected job growth, with receipts.';
-export const MUSEUM_URL = 'https://museumofextinctjobs.com';
 
 export type NavItem = { label: string; href: string };
 

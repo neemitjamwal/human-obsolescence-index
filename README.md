@@ -86,6 +86,11 @@ The pipeline never publishes a partial or silently wrong index. `npm run build:i
 - The OBS score and the stat pack (`/stat-pack/`) are derived work; cite them as "Human Obsolescence Index, <edition> edition".
 - Fonts: JetBrains Mono, IBM Plex Mono and Atkinson Hyperlegible (SIL Open Font License), served by Google Fonts. The OG cards are rendered with the system's monospace fallback when those fonts are not installed, so card typography can differ between Windows and Netlify's Linux build image.
 
+## Museum cross-links and the embed widget
+
+- `src/data/precedents.ts` maps SOC codes to Museum of Extinct Jobs exhibits. Occupation pages render them as "Historical precedent: The … thought so too" links built from `MUSEUM_BASE_URL` at the top of that file. `tests/crosslinks-embed.test.ts` checks every exhibit slug against the sibling `../museum-of-extinct-jobs` checkout when it is present.
+- `/embed/` (`src/pages/embed.astro`) is a self-contained, iframe-able ticker and score lookup for the leaderboard occupations. It uses inline CSS and vanilla inline JS over embedded JSON, makes no third-party requests, and shows the copy-paste iframe snippet with an attribution link. When framed, the snippet section hides itself.
+
 ## Deploy (Netlify from GitHub)
 
 1. Push this repository to GitHub.

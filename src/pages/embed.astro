@@ -1,0 +1,237 @@
+---
+import { META } from '../lib/data';
+import { formatSignedPercent } from '../lib/format';
+import { SITE_NAME } from '../lib/site';
+import { DEFAULT_OG_IMAGE, OG_IMAGE_SIZE } from '../lib/seo';
+import { EMBED_PATH, embedEntries, embedJson, embedSnippet } from '../lib/embed';
+
+const site = Astro.site!;
+const entries = embedEntries(site);
+const ticker = entries.slice(0, 12);
+const initial = entries.slice(0, 5);
+const snippet = embedSnippet(site);
+const home = new URL('/', site).href;
+const methodology = new URL('/methodology/', site).href;
+const canonical = new URL(EMBED_PATH, site).href;
+const imageUrl = new URL(DEFAULT_OG_IMAGE, site).href;
+const title = `Embeddable ticker · ${SITE_NAME}`;
+const description = `A free, self-contained widget: the live ${META.edition} OBS ticker and a score lookup for the ${entries.length} occupations on the Human Obsolescence Index board. Copy one iframe; attribution included.`;
+const tone = (band: string) => (band === 'Severe' || band === 'Elevated' ? 'alert' : band === 'Moderate' ? 'amber' : 'phosphor');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:width" content={String(OG_IMAGE_SIZE.width)} />
+    <meta property="og:image:height" content={String(OG_IMAGE_SIZE.height)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    <meta name="theme-color" content="#0d1117" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style is:inline>
+      :root { color-scheme: dark; --slate: #0d1117; --panel: #161b22; --grid: #21262d; --phosphor: #2ea043; --alert: #f85149; --amber: #f0b429; --paper: #e6edf3; --dim: #9da7b3; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--slate); color: var(--paper); font: 14px/1.45 ui-monospace, 'JetBrains Mono', 'IBM Plex Mono', Consolas, Menlo, monospace; }
+      a { color: var(--paper); }
+      a:hover { color: var(--phosphor); }
+      a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+      .hoi { max-width: 680px; margin: 0 auto; border: 1px solid var(--grid); background: var(--panel); }
+      .hoi-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 10px 12px; border-bottom: 1px solid var(--grid); text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+      .hoi-head strong { color: var(--phosphor); }
+      .hoi-ticker { overflow: hidden; border-bottom: 1px solid var(--grid); background: var(--slate); }
+      .hoi-track { display: flex; width: max-content; animation: hoi-scroll 45s linear infinite; }
+      .hoi-ticker:hover .hoi-track, .hoi-ticker:focus-within .hoi-track { animation-play-state: paused; }
+      .hoi-track ul { display: flex; gap: 28px; margin: 0; padding: 8px 14px; list-style: none; white-space: nowrap; font-size: 12px; text-transform: uppercase; }
+      .hoi-track a { text-decoration: none; }
+      @keyframes hoi-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+      @media (prefers-reduced-motion: reduce) {
+        .hoi-ticker { overflow-x: auto; }
+        .hoi-track { animation: none; }
+        .hoi-track ul[aria-hidden] { display: none; }
+      }
+      .alert { color: var(--alert); } .amber { color: var(--amber); } .phosphor { color: var(--phosphor); } .dim { color: var(--dim); }
+      .hoi-body { padding: 12px; }
+      .hoi-body label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); }
+      .hoi-body input { width: 100%; margin-top: 6px; padding: 9px 10px; border: 1px solid var(--grid); background: var(--slate); color: var(--paper); font: inherit; }
+      .hoi-status { margin: 8px 0 0; font-size: 11px; color: var(--dim); }
+      .hoi-results { margin: 8px 0 0; padding: 0; list-style: none; }
+      .hoi-results li { display: grid; grid-template-columns: 3.2em 1fr auto; gap: 4px 10px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--grid); }
+      .hoi-rank { color: var(--dim); font-size: 12px; }
+      .hoi-score { font-size: 20px; font-weight: 800; text-align: right; }
+      .hoi-meta { grid-column: 2 / 4; font-size: 11px; color: var(--dim); }
+      .hoi-foot { padding: 10px 12px; border-top: 1px solid var(--grid); font-size: 11px; color: var(--dim); }
+      .hoi-foot p { margin: 0 0 4px; }
+      .hoi-docs { max-width: 680px; margin: 20px auto 40px; padding: 0 2px; }
+      .hoi-docs h1 { font-size: 18px; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 8px; }
+      .hoi-docs p { color: var(--dim); }
+      .hoi-docs pre { overflow-x: auto; padding: 10px; border: 1px solid var(--grid); background: var(--panel); white-space: pre-wrap; word-break: break-all; font-size: 12px; }
+      .hoi-docs button { padding: 7px 12px; border: 1px solid var(--phosphor); background: transparent; color: var(--phosphor); font: inherit; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; cursor: pointer; }
+      .hoi-docs button:hover { background: var(--phosphor); color: var(--slate); }
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+      .framed .hoi-docs { display: none; }
+      .framed body { padding: 0; }
+      body { padding: 12px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hoi" aria-label={`${SITE_NAME} widget`} data-embed-widget>
+        <div class="hoi-head">
+          <span><strong>HOI</strong> · Obsolescence ticker</span>
+          <span class="dim">{META.edition} · data as of {META.dataAsOf}</span>
+        </div>
+        <section class="hoi-ticker" aria-label={`Top ${ticker.length} OBS scores`} data-embed-ticker>
+          <div class="hoi-track">
+            {
+              [false, true].map((duplicate) => (
+                <ul aria-hidden={duplicate ? 'true' : undefined}>
+                  {ticker.map((e) => (
+                    <li>
+                      <a href={e.u} target="_blank" rel="noopener" tabindex={duplicate ? '-1' : undefined}>
+                        <span class="alert" aria-hidden="true">▲ </span>{e.t} <span class={tone(e.b)}>OBS {e.o}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ))
+            }
+          </div>
+        </section>
+        <div class="hoi-body" data-embed-lookup>
+          <label for="hoi-q">Look up an occupation</label>
+          <input id="hoi-q" type="search" autocomplete="off" spellcheck="false" placeholder="e.g. translator, cashier, programmer" aria-describedby="hoi-status" />
+          <p id="hoi-status" class="hoi-status" aria-live="polite">Top {initial.length} of {entries.length} on the board. Type to search.</p>
+          <ul id="hoi-results" class="hoi-results">
+            {
+              initial.map((e) => (
+                <li>
+                  <span class="hoi-rank">#{e.r}</span>
+                  <a href={e.u} target="_blank" rel="noopener">{e.t}</a>
+                  <span class:list={['hoi-score', tone(e.b)]}>{e.o}</span>
+                  <span class="hoi-meta">OBS band {e.b} · BLS category {e.c ?? 'not rated'} · BLS 2025–35 {formatSignedPercent(e.p)}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+        <div class="hoi-foot">
+          <p>
+            OBS = our composite of Microsoft, OpenAI and BLS data, 0–100. BLS category = the government's own label.
+            Exposure measures what AI can do to a job's tasks, not whether the job disappears.{' '}
+            <a href={methodology} target="_blank" rel="noopener">Methodology</a>
+          </p>
+          <p>
+            Data: <a href={home} target="_blank" rel="noopener" data-embed-attribution>{SITE_NAME}</a> · gallows humor with receipts
+          </p>
+        </div>
+      </section>
+
+      <section class="hoi-docs" aria-labelledby="embed-title" data-embed-docs>
+        <h1 id="embed-title">Put the ticker on your site</h1>
+        <p>
+          Copy this snippet into any page. The widget is one static file: no cookies, no trackers, no third-party
+          requests. It shows the {entries.length} occupations on the {META.edition} board and updates when the Index does,
+          each quarter. Keep the attribution line.
+        </p>
+        <pre><code id="hoi-snippet" data-embed-snippet>{snippet}</code></pre>
+        <p><button type="button" id="hoi-copy">Copy snippet</button> <span id="hoi-copied" class="dim" aria-live="polite"></span></p>
+        <p>
+          Back to the <a href="/">{SITE_NAME} leaderboard</a> · <a href="/methodology/">Methodology</a> ·{' '}
+          <a href="/press/">Press kit</a> · <a href="/about/">About</a>
+        </p>
+      </section>
+    </main>
+
+    <script type="application/json" id="hoi-data" set:html={embedJson(entries)}></script>
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        try {
+          if (window.self !== window.top) root.className += ' framed';
+        } catch (e) {
+          root.className += ' framed';
+        }
+        var data = JSON.parse(document.getElementById('hoi-data').textContent);
+        var input = document.getElementById('hoi-q');
+        var list = document.getElementById('hoi-results');
+        var status = document.getElementById('hoi-status');
+        var tone = function (b) { return b === 'Severe' || b === 'Elevated' ? 'alert' : b === 'Moderate' ? 'amber' : 'phosphor'; };
+        var pct = function (p) {
+          if (p === null) return 'not published';
+          var s = (Math.round(Math.abs(p) * 10) / 10).toString();
+          return (p > 0 ? '+' : p < 0 ? '\u2212' : '') + s + '%';
+        };
+        var norm = function (s) { return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); };
+        var el = function (tag, cls, text) {
+          var n = document.createElement(tag);
+          if (cls) n.className = cls;
+          if (text !== undefined) n.textContent = text;
+          return n;
+        };
+        var render = function (rows) {
+          list.textContent = '';
+          rows.forEach(function (e) {
+            var li = el('li');
+            li.appendChild(el('span', 'hoi-rank', '#' + e.r));
+            var a = el('a', '', e.t);
+            a.href = e.u;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            li.appendChild(a);
+            li.appendChild(el('span', 'hoi-score ' + tone(e.b), String(e.o)));
+            li.appendChild(el('span', 'hoi-meta', 'OBS band ' + e.b + ' \u00b7 BLS category ' + (e.c || 'not rated') + ' \u00b7 BLS 2025\u201335 ' + pct(e.p)));
+            list.appendChild(li);
+          });
+        };
+        var search = function () {
+          var q = norm(input.value);
+          if (!q) {
+            render(data.slice(0, 5));
+            status.textContent = 'Top 5 of ' + data.length + ' on the board. Type to search.';
+            return;
+          }
+          var words = q.split(' ');
+          var hits = data.filter(function (e) {
+            var t = norm(e.t);
+            return words.every(function (w) { return t.indexOf(w.replace(/s$/, '')) !== -1; });
+          });
+          render(hits.slice(0, 6));
+          status.textContent = hits.length === 0
+            ? 'No match on the ' + data.length + '-occupation board. It lists the highest scores only; try a broader word.'
+            : hits.length + (hits.length === 1 ? ' match' : ' matches') + (hits.length > 6 ? ', showing the top 6' : '') + '.';
+        };
+        input.addEventListener('input', search);
+        var copy = document.getElementById('hoi-copy');
+        var copied = document.getElementById('hoi-copied');
+        var code = document.getElementById('hoi-snippet');
+        copy.addEventListener('click', function () {
+          var text = code.textContent;
+          var done = function () { copied.textContent = 'Copied.'; };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done, function () { copied.textContent = 'Select the snippet and copy it.'; });
+          } else {
+            var range = document.createRange();
+            range.selectNodeContents(code);
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+            copied.textContent = 'Snippet selected. Press Ctrl+C or Cmd+C.';
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

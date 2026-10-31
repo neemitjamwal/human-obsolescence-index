@@ -1,22 +1,24 @@
 ---
-import { MUSEUM_PRECEDENTS } from '../data/precedents';
+import { MUSEUM_PRECEDENTS, museumExhibitUrl, precedentHeadline } from '../data/precedents';
 
 interface Props {
   soc: string;
 }
 
-// Slot for the Museum of Extinct Jobs cross-link. The mapping in src/data/precedents.ts is filled by the
-// launch milestone; until then the slot renders as an empty, invisible marker.
 const precedent = MUSEUM_PRECEDENTS[Astro.props.soc];
 ---
 
 <div data-museum-precedent-slot={Astro.props.soc}>
   {
     precedent && (
-      <aside class="panel mt-10 p-5" aria-labelledby="precedent-title">
-        <h2 id="precedent-title" class="term-label text-amber">Historical precedent</h2>
-        <p class="prose-block mt-2">
-          {precedent.line} <a class="underline" href={precedent.url}>{precedent.exhibit} at the Museum of Extinct Jobs</a>
+      <aside class="panel mt-10 border-l-4 border-l-amber p-5" aria-labelledby="precedent-title" data-museum-precedent={precedent.exhibit.slug}>
+        <h2 id="precedent-title" class="term-label text-amber">{precedentHeadline(precedent)}</h2>
+        <p class="prose-block mt-3">{precedent.why}</p>
+        <p class="prose-block mt-2 text-dim">{precedent.exhibit.context}</p>
+        <p class="mt-3">
+          <a class="term-label text-paper underline hover:text-phosphor" href={museumExhibitUrl(precedent.exhibit)}>
+            Visit the {precedent.exhibit.name.toLowerCase()} exhibit at the Museum of Extinct Jobs →
+          </a>
         </p>
       </aside>
     )

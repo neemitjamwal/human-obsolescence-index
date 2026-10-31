@@ -58,7 +58,7 @@ describe('occupation pages cite resolvable sources', () => {
     expect(() => sourceById('not-a-source')).toThrow();
   });
 
-  it('keeps the museum precedent slot empty until the launch mapping lands', () => {
+  it('maps museum precedents only onto occupations the Index publishes', () => {
     for (const soc of Object.keys(MUSEUM_PRECEDENTS)) expect(OCCUPATIONS.some((o) => o.soc === soc)).toBe(true);
   });
 });
