@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TickerStrip from '../components/TickerStrip.astro';
+import Ledger from '../components/Ledger.astro';
+import LedgerRow from '../components/LedgerRow.astro';
+import type { BlsCategory } from '../lib/ledger';
+
+// TODO(index-site-pages): replace with the ranked top ~120 from src/data/occupations.json.
+// These rows only exercise the ledger design; they are labeled as specimens on the page and carry no real data.
+const SPECIMENS: { occupation: string; obs: number; delta: number | null; category: BlsCategory | null }[] = [
+  { occupation: 'Specimen row · severe band', obs: 88, delta: 4, category: 'Very high' },
+  { occupation: 'Specimen row · elevated band', obs: 63, delta: -2, category: 'High' },
+  { occupation: 'Specimen row · moderate band', obs: 37, delta: 0, category: 'Moderate' },
+  { occupation: 'Specimen row · low band', obs: 12, delta: null, category: 'Low' },
+];
+---
+
+<BaseLayout>
+  <TickerStrip />
+
+  <section class="mx-auto max-w-6xl px-4 pb-6 pt-10 md:px-6 md:pt-14" aria-labelledby="floor-title">
+    <p class="term-label text-phosphor">Exchange floor · Session open</p>
+    <h1 id="floor-title" class="blink-cursor mt-3 font-display text-3xl font-extrabold uppercase leading-tight tracking-tight md:text-5xl">
+      Human Obsolescence Index
+    </h1>
+    <p class="prose-block mt-4 text-dim">
+      Occupations ranked like stocks, by how much of their work AI can already touch and where official projections say
+      they are heading. Every number will carry its receipt.
+    </p>
+    <!-- TODO(index-site-pages): hero summary built only from figures in occupations.json (universe size, release date). -->
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 md:px-6" aria-labelledby="board-title">
+    <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
+      <h2 id="board-title" class="font-display text-xl font-bold uppercase tracking-wide">Leaderboard</h2>
+      <!-- TODO(index-site-pages): score-band filter / sort controls. -->
+    </div>
+    <p class="placeholder-flag term-label mb-4 px-3 py-2" data-placeholder>
+      Design specimens, not data · The ranked board loads once the data pipeline ships
+    </p>
+    <Ledger caption="Specimen leaderboard rows (design preview, not data)">
+      {SPECIMENS.map((row, i) => <LedgerRow rank={i + 1} {...row} />)}
+    </Ledger>
+  </section>
+
+  <section class="mx-auto mt-12 max-w-6xl px-4 md:px-6" aria-labelledby="disclaimer-title">
+    <div class="panel border-l-4 border-l-amber p-5">
+      <h2 id="disclaimer-title" class="term-label text-amber">Read before trading</h2>
+      <p class="prose-block mt-2">
+        Exposure measures what AI can do to an occupation's tasks, not whether the job disappears.
+        <a href="/methodology/" class="underline">Read the methodology</a>.
+      </p>
+    </div>
+    <!-- TODO(index-site-pages): biggest risers/fallers and the quarterly changelog teaser. -->
+  </section>
+</BaseLayout>

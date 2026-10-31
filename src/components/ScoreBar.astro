@@ -1,0 +1,19 @@
+---
+import { BAND_LABELS, clampScore, scoreBand } from '../lib/ledger';
+
+interface Props {
+  score: number;
+}
+
+const score = clampScore(Astro.props.score);
+const band = scoreBand(score);
+---
+
+<span class:list={['score-bar', `band-${band}`]}>
+  <span class="score-bar-track" aria-hidden="true">
+    <span class="score-bar-fill" style={`width: ${score}%`}></span>
+  </span>
+  <span class="score-bar-value">
+    {score}<span class="sr-only"> out of 100 OBS, {BAND_LABELS[band]} band</span>
+  </span>
+</span>

@@ -1,0 +1,14 @@
+---
+import { categoryClass, type BlsCategory } from '../lib/ledger';
+
+interface Props {
+  category?: BlsCategory | null;
+}
+
+const { category = null } = Astro.props;
+---
+
+<span class:list={['category-chip', categoryClass(category)]} title="Official BLS AI exposure category">
+  <span class="chip-source">BLS</span>
+  <span>{category ?? 'Not rated'}</span>
+</span>

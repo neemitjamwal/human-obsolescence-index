@@ -1,0 +1,20 @@
+---
+interface Props {
+  caption: string;
+}
+
+const { caption } = Astro.props;
+---
+
+<div class="ledger">
+  <div class="ledger-head term-label" aria-hidden="true">
+    <span>Rank</span>
+    <span>Occupation</span>
+    <span>OBS score</span>
+    <span class="text-right">Δ</span>
+    <span>BLS category</span>
+  </div>
+  <ol class="ledger-list" aria-label={caption}>
+    <slot />
+  </ol>
+</div>

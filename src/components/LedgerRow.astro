@@ -1,0 +1,41 @@
+---
+import CategoryChip from './CategoryChip.astro';
+import ScoreBar from './ScoreBar.astro';
+import { deltaDirection, deltaGlyph, formatDelta, type BlsCategory } from '../lib/ledger';
+
+interface Props {
+  rank: number;
+  occupation: string;
+  obs: number;
+  /** Change in OBS since the previous release; null when there is no prior release. */
+  delta?: number | null;
+  category?: BlsCategory | null;
+  href?: string;
+}
+
+const { rank, occupation, obs, delta = null, category = null, href } = Astro.props;
+const direction = deltaDirection(delta);
+const deltaText = formatDelta(delta);
+const deltaLabel =
+  direction === 'up'
+    ? `up ${deltaText.slice(1)} points since last release`
+    : direction === 'down'
+      ? `down ${deltaText.slice(1)} points since last release`
+      : delta == null
+        ? 'no prior release to compare'
+        : 'unchanged since last release';
+const Tag = href ? 'a' : 'div';
+---
+
+<li>
+  <Tag href={href} class="ledger-row" data-ledger-row data-obs={obs}>
+    <span class="ledger-rank"><span class="sr-only">Rank </span>{String(rank).padStart(3, '0')}</span>
+    <span class="ledger-name">{occupation}</span>
+    <span class="ledger-bar"><ScoreBar score={obs} /></span>
+    <span class:list={['ledger-delta', `delta-${direction}`]}>
+      <span aria-hidden="true">{deltaGlyph(direction)} {deltaText}</span>
+      <span class="sr-only">, {deltaLabel}</span>
+    </span>
+    <span class="ledger-chip"><CategoryChip category={category} /></span>
+  </Tag>
+</li>

@@ -1,0 +1,28 @@
+{
+  "name": "human-obsolescence-index",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "verify": "node scripts/verify-dist.mjs",
+    "build:index": "node scripts/build-index.mjs",
+    "og:cards": "node scripts/og-cards.mjs"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.3.8",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "exceljs": "^4.4.0",
+    "sharp": "^0.35.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
