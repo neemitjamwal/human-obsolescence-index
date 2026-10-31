@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { META, OCCUPATIONS, leaderboard } from '../src/lib/data';
@@ -9,7 +9,8 @@ import { sitePaths } from '../src/lib/seo';
 const root = join(__dirname, '..');
 const site = new URL('https://humanobsolescenceindex.com');
 // The museum repo is a sibling checkout; its committed exhibits.ts drives its /exhibits/[slug]/ pages.
-const museumRoot = join(root, '..', 'museum-of-extinct-jobs');
+// MUSEUM_REPO_DIR overrides the location (point it at a missing directory to simulate a standalone checkout).
+const museumRoot = process.env.MUSEUM_REPO_DIR ?? join(root, '..', 'museum-of-extinct-jobs');
 const museumExhibits = join(museumRoot, 'src', 'data', 'exhibits.ts');
 const museumAiWing = join(museumRoot, 'src', 'data', 'ai-wing.ts');
 
@@ -39,9 +40,13 @@ describe('museum precedents (Index data)', () => {
   });
 });
 
+// Vitest runs skipped suite factories during collection, so sibling files are read in beforeAll, never in the factory.
 describe.skipIf(!existsSync(museumExhibits))('museum precedents resolve against the museum repo', () => {
-  const source = readFileSync(museumExhibits, 'utf8');
-  const exhibits = [...source.matchAll(/slug: '([^']+)',\s*name: (['"])(.+?)\2,/g)].map((m) => ({ slug: m[1], name: m[3] }));
+  let exhibits: { slug: string; name: string }[];
+  beforeAll(() => {
+    const source = readFileSync(museumExhibits, 'utf8');
+    exhibits = [...source.matchAll(/slug: '([^']+)',\s*name: (['"])(.+?)\2,/g)].map((m) => ({ slug: m[1], name: m[3] }));
+  });
 
   it('reads the museum exhibit list', () => {
     expect(exhibits.length).toBe(23);
@@ -58,12 +63,15 @@ describe.skipIf(!existsSync(museumExhibits))('museum precedents resolve against 
 });
 
 describe.skipIf(!existsSync(museumAiWing))('museum AI-wing links point at Index pages', () => {
-  const source = readFileSync(museumAiWing, 'utf8');
-  const links = [...source.matchAll(/indexCrosslink: \{\s*soc: '([^']+)',\s*title: '([^']+)',\s*slug: '([^']+)'/g)].map((m) => ({
-    soc: m[1],
-    title: m[2],
-    slug: m[3],
-  }));
+  let links: { soc: string; title: string; slug: string }[];
+  beforeAll(() => {
+    const source = readFileSync(museumAiWing, 'utf8');
+    links = [...source.matchAll(/indexCrosslink: \{\s*soc: '([^']+)',\s*title: '([^']+)',\s*slug: '([^']+)'/g)].map((m) => ({
+      soc: m[1],
+      title: m[2],
+      slug: m[3],
+    }));
+  });
 
   it('finds the museum links and every one matches a published occupation', () => {
     expect(links.length).toBe(9);
