@@ -1,139 +1,90 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import TickerStrip from '../components/TickerStrip.astro';
-import Ledger from '../components/Ledger.astro';
-import LedgerRow from '../components/LedgerRow.astro';
+import CategoryChip from '../components/CategoryChip.astro';
 import CiteLink from '../components/CiteLink.astro';
-import { alsoTracked, leaderboard, META, occupationPath, type Occupation } from '../lib/data';
-import { tickerEntries } from '../lib/press';
-import { BAND_LABELS, SCORE_BANDS, type BandFilter } from '../lib/ledger';
+import { leaderboard, META, occupationPath } from '../lib/data';
+import { formatJobs, formatSignedPercent } from '../lib/format';
+import { BAND_LABELS, scoreBand } from '../lib/ledger';
 
 const board = leaderboard();
-const tracked = alsoTracked();
+const top = board[0];
+const topObs = top.scores.obs.value!;
+const topBand = BAND_LABELS[scoreBand(topObs)];
+const shame = board.slice(0, 10);
 const u = META.universe;
-const bandFilters: { id: BandFilter; label: string }[] = [
-  { id: 'all', label: 'All' },
-  ...SCORE_BANDS.map((b) => ({ id: b, label: BAND_LABELS[b] })),
-];
-const rowProps = (o: Occupation) => ({
-  occupation: o.title,
-  obs: o.scores.obs.value ?? 0,
-  change: o.projectedChange.percent.value,
-  category: o.blsCategory.value,
-  href: occupationPath(o.slug),
-  exposure: o.scores.exposure.value,
-  trajectory: o.scores.trajectory.value,
-});
 ---
 
 <BaseLayout
-  description={`The ${META.edition} Human Obsolescence Index: ${board.length} occupations ranked by AI exposure and BLS projected employment change, every number with its source.`}
+  masthead="full"
+  description={`The ${META.edition} Human Obsolescence Index: ${board.length} occupations ranked by a Doom Score built from AI exposure and BLS projected employment change, every number with its source.`}
 >
-  <TickerStrip items={tickerEntries()} label="Market ticker: top OBS scores and steepest BLS projected declines" />
-
-  <section class="mx-auto max-w-6xl px-4 pb-6 pt-10 md:px-6 md:pt-14" aria-labelledby="floor-title">
-    <p class="term-label text-phosphor">Exchange floor · {META.edition} session · Data as of {META.dataAsOf}</p>
-    <h1 id="floor-title" class="blink-cursor mt-3 font-display text-3xl font-extrabold uppercase leading-tight tracking-tight md:text-5xl">
-      Human Obsolescence Index
-    </h1>
-    <p class="prose-block mt-4 text-dim">
-      Occupations traded like stocks. We scored {u.obsScored} of the {u.size} occupations BLS projects, on how much of their
-      work AI can already touch and where BLS says their employment is heading. The {board.length} highest scores among
-      occupations with at least {META.leaderboard.minOesEmployment.toLocaleString('en-US')} workers make the board. Every
-      occupation page carries its receipts.
-    </p>
-    <dl class="mt-6 grid max-w-3xl grid-cols-2 gap-px border border-grid bg-grid text-sm sm:grid-cols-4">
-      <div class="bg-panel p-3"><dt class="term-label text-dim">Listed</dt><dd class="font-display text-2xl font-bold">{board.length}</dd></div>
-      <div class="bg-panel p-3"><dt class="term-label text-dim">Scored</dt><dd class="font-display text-2xl font-bold">{u.obsScored}</dd></div>
-      <div class="bg-panel p-3"><dt class="term-label text-dim">Board cutoff</dt><dd class="font-display text-2xl font-bold">OBS {META.leaderboard.cutoffObs}</dd></div>
-      <div class="bg-panel p-3"><dt class="term-label text-dim">Top score</dt><dd class="font-display text-2xl font-bold text-alert">{board[0].scores.obs.value}</dd></div>
-    </dl>
-  </section>
-
-  <section class="mx-auto max-w-6xl px-4 md:px-6" aria-labelledby="board-title">
-    <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
-      <h2 id="board-title" class="font-display text-xl font-bold uppercase tracking-wide">Leaderboard</h2>
-      <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter both lists by OBS score band" data-band-filters>
-        <span class="term-label text-dim">OBS band:</span>
-        {
-          bandFilters.map((f) => (
-            <button type="button" class="filter-chip term-label" data-band-filter={f.id} aria-pressed={f.id === 'all' ? 'true' : 'false'}>
-              {f.label}
-            </button>
-          ))
-        }
-      </div>
-    </div>
-    <p class="mb-3 max-w-3xl text-sm text-dim">
-      OBS = our composite score (bar, 0–100); the band filter uses our bands (Severe 75+, Elevated 50–74, Moderate 25–49,
-      Low under 25). BLS Δ jobs = BLS projected employment change, 2025–35. BLS category = the government's own exposure
-      label, shown beside our number, not part of it and not what the filter uses.
-      Sources: <CiteLink id="hoi-composite" /> · <CiteLink id="bls-ep" /> · <CiteLink id="bls-ai-exposure" />.
-    </p>
-    <p class="term-label mb-3 text-dim" aria-live="polite" data-filter-status>
-      All bands: showing {board.length} ranked and {tracked.length} tracked occupations
-    </p>
-    <Ledger caption={`Leaderboard, ${board.length} occupations ranked by OBS score, highest first`} id="leaderboard">
-      {board.map((o) => <LedgerRow rank={o.leaderboardRank} {...rowProps(o)} />)}
-    </Ledger>
-    <p class="panel mt-3 p-4 text-sm text-dim" data-board-empty hidden>
-      No ranked occupation sits in this band. The board is the top {board.length} scores, so its lowest is OBS
-      {' '}{META.leaderboard.cutoffObs}. Lower-band occupations are in the tracked list below.
-    </p>
-  </section>
-
-  <section class="mx-auto mt-12 max-w-6xl px-4 md:px-6" aria-labelledby="tracked-title">
-    <h2 id="tracked-title" class="font-display text-xl font-bold uppercase tracking-wide">Also on the floor</h2>
-    <p class="prose-block mt-2 mb-4 text-dim">
-      Not ranked, but tracked: every occupation on BLS's fastest-declining list that missed the board, plus a few
-      low-scoring contrast picks such as registered nurses and electricians, plus the occupations the Museum of Extinct
-      Jobs AI wing links to, such as actors and paralegals. A shrinking job is not always an AI story.
-    </p>
-    <Ledger caption={`${tracked.length} tracked occupations outside the ranked board, highest OBS first`} id="tracked">
-      {tracked.map((o) => <LedgerRow rank={null} {...rowProps(o)} />)}
-    </Ledger>
-  </section>
-
-  <section class="mx-auto mt-12 max-w-6xl px-4 md:px-6" aria-labelledby="disclaimer-title">
-    <div class="panel border-l-4 border-l-amber p-5">
-      <h2 id="disclaimer-title" class="term-label text-amber">Read before trading</h2>
-      <p class="prose-block mt-2">
-        Exposure measures what AI can do to an occupation's tasks, not whether the job disappears. No deltas yet: this is
-        the first edition, so the Δ column shows BLS's own projection. Score movement starts next quarter.
-        {' '}<a href="/methodology/" class="underline">Read the methodology</a> or the <a href="/changelog/" class="underline">changelog</a>.
+  <!--
+    HERO SLOT. The "Type your job" combobox, name field, verdict reveal and share cards replace the contents of
+    this section (feature index-verdict-hero-and-share). Keep the data-hero-slot attribute on the replacement.
+  -->
+  <section class="mx-auto grid max-w-6xl gap-6 px-4 pb-10 pt-8 md:px-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start" aria-labelledby="hero-title" data-hero-slot>
+    <div>
+      <h1 id="hero-title" class="hook-h">Type your job.<br /><span class="hl">We print the headline.</span></h1>
+      <p class="prose-block mt-5 font-bold">
+        {u.obsScored} occupations scored. {board.length} on the board. Every number traced to a public source. The
+        search box goes to press next edition; until then, find your job on the full board.
+      </p>
+      <p class="mt-6 flex flex-wrap gap-3">
+        <a class="btn btn-red" href="/leaderboard/">See all {board.length} on the Doom Index →</a>
+        <a class="btn" href="/methodology/">How we score it</a>
       </p>
     </div>
+
+    <article class="box-yellow anim-slam p-4 md:p-5" aria-labelledby="splash-title" data-front-splash>
+      <p class="kicker text-red">Exclusive · Job No. {top.soc}</p>
+      <h2 id="splash-title" class="mt-2 font-display text-[clamp(2.3rem,9vw,4.25rem)] uppercase leading-[0.92]">
+        <a href={occupationPath(top.slug)} class="no-underline hover:text-ink">{top.title}: #1 on the Doom Index</a>
+      </h2>
+      <div class="splash mt-4">
+        <div class="burst anim-spin" role="img" aria-label={`Doom Score ${topObs} out of 100`}>
+          <span class="burst-n" aria-hidden="true">{topObs}</span>
+          <span class="burst-of" aria-hidden="true">Doom Score<br />out of 100</span>
+        </div>
+        <div class="grid gap-2">
+          <p class="stamp anim-thud">{topBand}</p>
+          <p class="fact"><b>#1</b> of {board.length}, most doomed on the board</p>
+          <p class="fact">
+            BLS projects <b>{formatSignedPercent(top.projectedChange.percent.value)}</b> by 2035:
+            {' '}<b>{formatJobs(top.employment.value)} → {formatJobs(top.projectedChange.employment2035.value)}</b> jobs
+          </p>
+          <p class="fact">BLS official AI exposure category: <CategoryChip category={top.blsCategory.value} /></p>
+        </div>
+      </div>
+      <p class="fine mt-4">
+        AI exposure ≠ job loss. Doom Score = 65% AI exposure (Microsoft + OpenAI research) + 35% BLS 2025–35 projection.
+        Sources: <CiteLink id="hoi-composite" /> · <CiteLink id="bls-ep" /> · <CiteLink id="bls-ai-exposure" /> ·
+        humanobsolescenceindex.com
+      </p>
+    </article>
+  </section>
+
+  <section class="mx-auto max-w-6xl border-t-[6px] border-double border-ink px-4 pt-8 md:px-6" aria-labelledby="shame-title">
+    <h2 id="shame-title" class="page-h">Hall of <span class="hl-red">shame</span></h2>
+    <p class="prose-block mt-3 font-bold">The {shame.length} most doomed jobs on the board, by Doom Score. Each one has its own page of receipts.</p>
+    <ol class="ledger ledger-list ledger-compact mt-5" aria-label={`Top ${shame.length} occupations by Doom Score`} data-home-shame>
+      {
+        shame.map((o) => (
+          <li>
+            <a class="ledger-row" href={occupationPath(o.slug)} data-shame-rank={o.leaderboardRank} data-rank={o.leaderboardRank}>
+              <span class="ledger-rank"><span class="sr-only">Number </span>{o.leaderboardRank}</span>
+              <span class="ledger-name">{o.title}</span>
+              <span class="ledger-bar">
+                <span class:list={['score-bar', `band-${scoreBand(o.scores.obs.value!)}`]}>
+                  <span class="score-bar-track" aria-hidden="true"><span class="score-bar-fill" style={`width: ${o.scores.obs.value}%`}></span></span>
+                </span>
+              </span>
+              <span class="ledger-score"><span class="sr-only">Doom Score </span>{o.scores.obs.value}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="mt-6"><a class="btn btn-yellow" href="/leaderboard/">The full board: all {board.length} →</a></p>
+    <p class="fine mt-4">AI exposure ≠ job loss. Exposure measures what AI can do to an occupation's tasks, not whether the job disappears · humanobsolescenceindex.com</p>
   </section>
 </BaseLayout>
-
-<script>
-  import { BAND_LABELS, matchesBandFilter, type ScoreBand } from '../lib/ledger';
-
-  const group = document.querySelector<HTMLElement>('[data-band-filters]');
-  const status = document.querySelector<HTMLElement>('[data-filter-status]');
-  const empty = document.querySelector<HTMLElement>('[data-board-empty]');
-  const ranked = Array.from(document.querySelectorAll<HTMLElement>('#leaderboard [data-ledger-row]'));
-  const tracked = Array.from(document.querySelectorAll<HTMLElement>('#tracked [data-ledger-row]'));
-  const apply = (rows: HTMLElement[], filter: string) => {
-    let shown = 0;
-    for (const row of rows) {
-      const visible = matchesBandFilter(row.dataset.band, filter);
-      row.parentElement!.hidden = !visible;
-      if (visible) shown += 1;
-    }
-    return shown;
-  };
-  group?.addEventListener('click', (event) => {
-    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-band-filter]');
-    if (!button) return;
-    const filter = button.dataset.bandFilter ?? 'all';
-    group.querySelectorAll('button[data-band-filter]').forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
-    const shownRanked = apply(ranked, filter);
-    const shownTracked = apply(tracked, filter);
-    if (empty) empty.hidden = shownRanked > 0;
-    const label = filter === 'all' ? 'All bands' : `OBS band ${BAND_LABELS[filter as ScoreBand]}`;
-    if (status) {
-      status.textContent = `${label}: showing ${shownRanked} of ${ranked.length} ranked and ${shownTracked} of ${tracked.length} tracked occupations`;
-    }
-  });
-</script>

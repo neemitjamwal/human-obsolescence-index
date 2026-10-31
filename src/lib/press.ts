@@ -106,6 +106,6 @@ export function tickerEntries(): TickerEntry[] {
     if (top[i]) mixed.push(top[i]);
     if (falling[i]) mixed.push(falling[i]);
   }
-  mixed.push({ label: 'EXPOSURE ≠ JOB LOSS · READ THE METHODOLOGY', value: '', tone: 'dim', glyph: '■' });
+  mixed.push({ label: 'AI EXPOSURE ≠ JOB LOSS · READ THE METHODOLOGY', value: '', tone: 'dim', glyph: '■' });
   return mixed;
 }

@@ -39,14 +39,14 @@ const coverageRows: [string, number, string][] = [
 
 <BaseLayout title="Methodology" description={`How the OBS score is built: ${pctWord(w.exposure)} AI exposure, ${pctWord(w.trajectory)} relative BLS projected trajectory, with coverage disclosure, BLS's own limits and every source.`}>
   <article class="mx-auto max-w-3xl px-4 py-12 md:px-6">
-    <p class="term-label text-phosphor">Prospectus · {META.edition} edition · Data as of {META.dataAsOf}</p>
-    <h1 class="mt-3 font-display text-3xl font-extrabold uppercase tracking-tight">Methodology</h1>
+    <p class="eyebrow">Exclusive · How the sausage is scored · {META.edition} edition · Data as of {META.dataAsOf}</p>
+    <h1 class="page-h mt-4"><span class="hl">Methodology</span></h1>
 
     <section aria-labelledby="summary-title" class="mt-8">
-      <h2 id="summary-title" class="font-display text-xl font-bold uppercase">In plain language</h2>
+      <h2 id="summary-title" class="section-h">In plain language</h2>
       <div class="prose-block mt-3 space-y-3">
         <p>
-          The OBS score (0 to 100) blends two rankings. <strong>How much of this job's work can AI touch, compared with
+          The Doom Score (our OBS composite, 0 to 100) blends two rankings. <strong>How much of this job's work can AI touch, compared with
           every other occupation?</strong> That is Exposure, {pctWord(w.exposure)} of the score. <strong>How weak is BLS's
           projected employment change for this job, compared with every other occupation?</strong> That is Trajectory,
           {' '}{pctWord(w.trajectory)} of the score.
@@ -96,42 +96,42 @@ const coverageRows: [string, number, string][] = [
         }      </div>
     </section>
 
-    <section aria-labelledby="formula-title" class="mt-10" id="formula">
-      <h2 id="formula-title" class="font-display text-xl font-bold uppercase">The formula</h2>
+    <section aria-labelledby="formula-title" class="mt-14" id="formula">
+      <h2 id="formula-title" class="section-h">The formula</h2>
       <ol class="mt-4 space-y-3" data-formula>
-        <li class="panel p-4">
-          <p class="term-label text-dim">Step 1 · Percentiles</p>
+        <li class="box p-4">
+          <p class="kicker">Step 1 · Percentiles</p>
           <p class="prose-block mt-1">{f.percentile}</p>
         </li>
-        <li class="panel p-4">
-          <p class="term-label text-dim">Step 2 · Exposure ({pctWord(w.microsoft)} Microsoft + {pctWord(w.eloundou)} Eloundou)</p>
-          <p class="mt-1 font-display text-sm font-bold">{f.exposure}</p>
-          <p class="prose-block mt-2 text-dim">
+        <li class="box p-4">
+          <p class="kicker">Step 2 · Exposure ({pctWord(w.microsoft)} Microsoft + {pctWord(w.eloundou)} Eloundou)</p>
+          <p class="mt-1 font-bold text-base">{f.exposure}</p>
+          <p class="prose-block mt-2">
             P_MSFT is the percentile of Microsoft's AI applicability score (<CiteLink id="msft-ai-applicability" />). P_ELD is
             the percentile of the Eloundou et al. β rating, dv_rating_beta (<CiteLink id="openai-gpts-are-gpts" />), mapped to
             SOC codes with the <CiteLink id="bls-crosswalk" />. {f.eloundouAggregation}
           </p>
         </li>
-        <li class="panel p-4">
-          <p class="term-label text-dim">Step 3 · Trajectory</p>
-          <p class="mt-1 font-display text-sm font-bold">{f.trajectory}</p>
-          <p class="prose-block mt-2 text-dim">
+        <li class="box p-4">
+          <p class="kicker">Step 3 · Trajectory</p>
+          <p class="mt-1 font-bold text-base">{f.trajectory}</p>
+          <p class="prose-block mt-2">
             The input is BLS's projected employment change, 2025–35 (<CiteLink id="bls-ep" />). The sign is flipped and
             turned into a percentile, so the occupations with the weakest projected change rank highest. Trajectory is
             relative: a job BLS expects to grow can still score in the middle or higher if most occupations are projected to
             grow faster. Faster projected growth always means a lower Trajectory.
           </p>
         </li>
-        <li class="panel p-4">
-          <p class="term-label text-dim">Step 4 · OBS ({pctWord(w.exposure)} Exposure + {pctWord(w.trajectory)} Trajectory)</p>
-          <p class="mt-1 font-display text-sm font-bold">{f.obs}</p>
-          <p class="prose-block mt-2 text-dim">{f.rounding}</p>
+        <li class="box p-4">
+          <p class="kicker">Step 4 · OBS ({pctWord(w.exposure)} Exposure + {pctWord(w.trajectory)} Trajectory)</p>
+          <p class="mt-1 font-bold text-base">{f.obs}</p>
+          <p class="prose-block mt-2">{f.rounding}</p>
         </li>
       </ol>
 
-      <div class="panel mt-4 p-4" data-worked-example>
-        <p class="term-label text-dim">Worked example · <a class="underline" href={occupationPath(ex.slug)}>{ex.title}</a></p>
-        <p class="mt-2 break-words font-display text-sm leading-relaxed">
+      <div class="box mt-4 p-4" data-worked-example>
+        <p class="kicker">Worked example · <a class="underline" href={occupationPath(ex.slug)}>{ex.title}</a></p>
+        <p class="mt-2 break-words font-bold leading-relaxed">
           P_MSFT {formatPercentile(ex.components.microsoft.percentile)} and P_ELD {formatPercentile(ex.components.eloundou.percentile)}
           (percentiles out of 100) → Exposure {formatScore(ex.scores.exposure.value)}. BLS change
           {' '}{formatSignedPercent(ex.components.employmentChange.raw)} → Trajectory {formatScore(ex.scores.trajectory.value)}.
@@ -139,24 +139,24 @@ const coverageRows: [string, number, string][] = [
         </p>
       </div>
 
-      <h3 class="term-label mt-6 text-paper">Display bands (ours, not BLS's)</h3>
-      <p class="prose-block mt-2 text-dim">
+      <h3 class="sub-h mt-8">Display bands (ours, not BLS's)</h3>
+      <p class="prose-block mt-2">
         OBS 75 and up is Severe, 50–74 Elevated, 25–49 Moderate, under 25 Low. These bands only color our number. The BLS
         category shown beside every score is BLS's own four-band label, published separately. It is not an input to the OBS.
       </p>
 
-      <h3 class="term-label mt-6 text-paper">Who makes the board</h3>
-      <p class="prose-block mt-2 text-dim">
+      <h3 class="sub-h mt-8">Who makes the board</h3>
+      <p class="prose-block mt-2">
         {lb.rule}: {lb.eligible} occupations qualify and the cutoff lands at OBS {lb.cutoffObs}. We also track, off the ranked
         board, all {META.forcedInclusions.fastestDeclining.socs.length} occupations on BLS's fastest-declining list
         (<CiteLink id="bls-ep" />) and {META.forcedInclusions.contrast.socs.length} low-scoring contrast occupations, so the
-        floor is not only bad news. Every occupation the Museum of Extinct Jobs AI wing links to also gets a page; those
+        front page is not only bad news. Every occupation the Museum of Extinct Jobs AI wing links to also gets a page; those
         that miss the board are tracked off it and never ranked.
       </p>
     </section>
 
-    <section aria-labelledby="coverage-title" class="mt-10" id="coverage" data-coverage>
-      <h2 id="coverage-title" class="font-display text-xl font-bold uppercase">Coverage disclosure</h2>
+    <section aria-labelledby="coverage-title" class="mt-14" id="coverage" data-coverage>
+      <h2 id="coverage-title" class="section-h">Coverage disclosure</h2>
       <p class="prose-block mt-2">
         Hiding gaps would be worse than a lower score. <strong data-msft-missing>{u.microsoftMissing}</strong> of the {u.size}
         occupations BLS projects have no Microsoft AI applicability score. Microsoft also scores
@@ -179,31 +179,31 @@ const coverageRows: [string, number, string][] = [
           </tbody>
         </table>
       </div>
-      <details class="panel mt-4 p-4">
-        <summary class="term-label cursor-pointer text-paper">The {missingMsft.length} occupations without a Microsoft score</summary>
-        <ul class="mt-3 columns-1 text-sm text-dim sm:columns-2">
+      <details class="box mt-4 p-4">
+        <summary class="kicker cursor-pointer text-ink">The {missingMsft.length} occupations without a Microsoft score</summary>
+        <ul class="mt-3 columns-1 text-sm sm:columns-2">
           {missingMsft.map((x) => <li>{x.title} ({x.soc})</li>)}
         </ul>
       </details>
     </section>
 
-    <section aria-labelledby="limits-title" class="mt-10" id="limits" data-bls-limits>
-      <h2 id="limits-title" class="font-display text-xl font-bold uppercase">What BLS says its exposure data does not mean</h2>
-      <p class="prose-block mt-2 text-dim">Quoted verbatim from the BLS AI exposure workbook (<CiteLink id="bls-ai-exposure" local />):</p>
+    <section aria-labelledby="limits-title" class="mt-14" id="limits" data-bls-limits>
+      <h2 id="limits-title" class="section-h">What BLS says its exposure data does not mean</h2>
+      <p class="prose-block mt-2">Quoted verbatim from the BLS AI exposure workbook (<CiteLink id="bls-ai-exposure" local />):</p>
       <blockquote class="quote-block mt-4" cite={blsSource.url} data-verbatim="bls-field-description">
         <p>{BLS_LIMITS.fieldDescription}</p>
       </blockquote>
       <blockquote class="quote-block mt-4" cite={blsSource.url} data-verbatim="bls-table-note">
         <p>{BLS_LIMITS.tableNote}</p>
       </blockquote>
-      <p class="prose-block mt-3 text-dim">
+      <p class="prose-block mt-3">
         BLS's full methodology and limitations: <a class="underline" href={blsSource.methodologyUrl}>{blsSource.methodologyUrl}</a>.
         On wages, BLS adds: "{BLS_LIMITS.wageNote}"
       </p>
     </section>
 
-    <section aria-labelledby="msft-title" class="mt-10" id="microsoft-warning" data-microsoft-warning>
-      <h2 id="msft-title" class="font-display text-xl font-bold uppercase">Microsoft's out-of-scope warning</h2>
+    <section aria-labelledby="msft-title" class="mt-14" id="microsoft-warning" data-microsoft-warning>
+      <h2 id="msft-title" class="section-h">Microsoft's out-of-scope warning</h2>
       <p class="prose-block mt-2">
         The Microsoft Research authors (Tomlinson, Jaffe, Wang, Counts and Suri) built their applicability score from how
         people actually use Copilot at work. They warn that it
@@ -212,8 +212,8 @@ const coverageRows: [string, number, string][] = [
       </p>
     </section>
 
-    <section aria-labelledby="canaries-title" class="mt-10" id="reality-check" data-canaries>
-      <h2 id="canaries-title" class="font-display text-xl font-bold uppercase">Reality check: the canaries (outside evidence)</h2>
+    <section aria-labelledby="canaries-title" class="mt-14" id="reality-check" data-canaries>
+      <h2 id="canaries-title" class="section-h">Reality check: the canaries (outside evidence)</h2>
       <div class="prose-block mt-2 space-y-3">
         <p>
           The OBS ranks what AI could touch. It has no hiring input and cannot tell you what is happening to any one
@@ -242,8 +242,8 @@ const coverageRows: [string, number, string][] = [
     </section>
 
     <section aria-labelledby="sources-title" class="mt-12" id="sources">
-      <h2 id="sources-title" class="font-display text-xl font-bold uppercase">Sources</h2>
-      <p class="prose-block mt-2 text-dim">
+      <h2 id="sources-title" class="section-h">Sources</h2>
+      <p class="prose-block mt-2">
         Every input, with the exact file, retrieval date, SHA-256 hash and license. The same manifest is downloadable as
         {' '}<a class="underline" href="/stat-pack/sources.json">sources.json</a>.
       </p>

@@ -8,17 +8,17 @@ const board = leaderboard();
 
 <BaseLayout title="About" description="What the Human Obsolescence Index is, how it stays honest, and who supplies the data.">
   <article class="mx-auto max-w-3xl px-4 py-12 md:px-6">
-    <p class="term-label text-phosphor">Prospectus disclosures</p>
-    <h1 class="mt-3 font-display text-3xl font-extrabold uppercase tracking-tight">About</h1>
+    <p class="eyebrow">Corrections &amp; disclosures</p>
+    <h1 class="page-h mt-4"><span class="hl">About</span></h1>
 
     <section class="mt-8" aria-labelledby="what-title">
-      <h2 id="what-title" class="font-display text-xl font-bold uppercase">What this is</h2>
+      <h2 id="what-title" class="section-h">What this is</h2>
       <div class="prose-block mt-3 space-y-3">
         <p>
-          A stock exchange for human worth. The Human Obsolescence Index lists {board.length} U.S. occupations like
-          securities and prices each one by how much of its work AI can touch and how its government-projected employment
-          growth compares with every other occupation's. A high price is a ranking, not a forecast that the job shrinks or
-          stops hiring. The ticker is a joke. The numbers are not.
+          A tabloid for the end of work. The Human Obsolescence Index runs {board.length} U.S. occupations like
+          front-page stories and gives each one a Doom Score for how much of its work AI can touch and how its
+          government-projected employment growth compares with every other occupation's. A high Doom Score is a ranking,
+          not a forecast that the job shrinks or stops hiring. The headlines are a joke. The numbers are not.
         </p>
         <p>
           Each occupation gets a page with its score, the parts that make it up, what the job actually involves, and
@@ -28,8 +28,8 @@ const board = leaderboard();
       </div>
     </section>
 
-    <section class="mt-10" aria-labelledby="honesty-title" id="honesty">
-      <h2 id="honesty-title" class="font-display text-xl font-bold uppercase">Gallows humor, with receipts</h2>
+    <section class="mt-14" aria-labelledby="honesty-title" id="honesty">
+      <h2 id="honesty-title" class="section-h">Gallows humor, with receipts</h2>
       <div class="prose-block mt-3 space-y-3">
         <p>
           We make jokes about the end of work because the alternative is pretending to be calm about it. The jokes stay in
@@ -46,26 +46,26 @@ const board = leaderboard();
       </div>
     </section>
 
-    <section class="mt-10" aria-labelledby="licensing-title" id="licensing">
-      <h2 id="licensing-title" class="font-display text-xl font-bold uppercase">Licensing and credits</h2>
+    <section class="mt-14" aria-labelledby="licensing-title" id="licensing">
+      <h2 id="licensing-title" class="section-h">Licensing and credits</h2>
       <ul class="mt-4 space-y-3" data-credits>
         {
           LICENSING_CREDITS.map((c) => (
-            <li class="panel p-4 [overflow-wrap:anywhere]" data-credit={c.id}>
+            <li class="box p-4 [overflow-wrap:anywhere]" data-credit={c.id}>
               <p class="font-semibold">{c.who}</p>
-              <p class="mt-1 text-sm text-dim">{c.what}</p>
-              <p class="term-label mt-2">License: <a class="underline" href={c.url}>{c.license}</a></p>
+              <p class="mt-1 text-sm">{c.what}</p>
+              <p class="kicker mt-2">License: <a class="underline" href={c.url}>{c.license}</a></p>
             </li>
           ))
         }
       </ul>
-      <p class="prose-block mt-4 text-dim">
+      <p class="prose-block mt-4">
         O*NET® is a trademark of USDOL/ETA. Our derived composite scores are released under CC BY 4.0; please credit the
         Human Obsolescence Index. Cited but never used as data: the Stanford Digital Economy Lab "Canaries" study (linked on
         the <a class="underline" href="/methodology/#reality-check">methodology page</a>).
       </p>
-      <h3 class="term-label mt-6 text-amber">Cited, never used as data</h3>
-      <p class="prose-block mt-2 text-dim">
+      <h3 class="sub-h mt-8 text-red">Cited, never used as data</h3>
+      <p class="prose-block mt-2">
         These are copyrighted or proprietary. We link to them as labeled citations only; none of their data is an input to
         any score, and none of it is redistributed.
       </p>
@@ -74,7 +74,7 @@ const board = leaderboard();
           CITE_ONLY.map((c) => (
             <li>
               <a class="underline" href={c.url} rel="noopener" data-cite-only>{c.name}</a>
-              <span class="text-amber"> · cite-only</span>
+              <span class="text-red"> · cite-only</span>
             </li>
           ))
         }

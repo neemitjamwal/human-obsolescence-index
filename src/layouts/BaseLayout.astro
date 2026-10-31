@@ -2,6 +2,8 @@
 import '../styles/global.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import TickerStrip from '../components/TickerStrip.astro';
+import { tickerEntries } from '../lib/press';
 import { SITE_NAME, SITE_TAGLINE } from '../lib/site';
 import { DEFAULT_OG_IMAGE, OG_IMAGE_SIZE } from '../lib/seo';
 
@@ -12,6 +14,7 @@ interface Props {
   image?: string;
   imageAlt?: string;
   type?: 'website' | 'article';
+  masthead?: 'full' | 'compact';
 }
 
 const {
@@ -20,6 +23,7 @@ const {
   image = DEFAULT_OG_IMAGE,
   imageAlt = `${SITE_NAME}: occupations ranked by AI exposure and BLS projected employment change`,
   type = 'website',
+  masthead = 'compact',
 } = Astro.props;
 const pageTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
 const canonical = new URL(Astro.url.pathname, Astro.site);
@@ -48,26 +52,26 @@ const imageUrl = new URL(image, Astro.site).href;
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageUrl} />
     <link rel="sitemap" href="/sitemap.xml" />
-    <meta name="theme-color" content="#0d1117" />
+    <meta name="theme-color" content="#e4002b" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;700;900&family=Permanent+Marker&display=swap"
     />
     <slot name="head" />
   </head>
   <body class="flex min-h-screen flex-col">
     <a
       href="#main"
-      class="term-label sr-only bg-phosphor px-4 py-2 text-slate focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50"
-    >Skip to the trading floor</a>
-    <SiteHeader />
+      class="kicker sr-only bg-yellow px-4 py-2 text-ink focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50"
+    >Skip to the story</a>
+    <SiteHeader size={masthead} />
+    <TickerStrip items={tickerEntries()} label="Breaking news ticker: top Doom Scores and steepest BLS projected declines" />
     <main id="main" class="flex-1 focus:outline-none" tabindex="-1">
       <slot />
     </main>
     <SiteFooter />
-    <div class="scanlines" aria-hidden="true"></div>
   </body>
 </html>

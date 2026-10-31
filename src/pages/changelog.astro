@@ -15,26 +15,26 @@ const next = nextEdition(META.edition);
 
 <BaseLayout title="Changelog" description={`Quarterly release log for the Human Obsolescence Index. Current edition: ${META.edition}, released ${META.dataAsOf}.`}>
   <article class="mx-auto max-w-3xl px-4 py-12 md:px-6">
-    <p class="term-label text-phosphor">Quarterly filings</p>
-    <h1 class="mt-3 font-display text-3xl font-extrabold uppercase tracking-tight">Changelog</h1>
-    <p class="prose-block mt-4 text-dim">
+    <p class="eyebrow">Late editions · Quarterly</p>
+    <h1 class="page-h mt-4"><span class="hl">Changelog</span></h1>
+    <p class="prose-block mt-4">
       The index is re-run every quarter from pinned, dated input files. Each release is logged here with what went in and
       what moved.
     </p>
 
-    <section class="panel mt-8 p-5" aria-labelledby={`release-${META.edition}`} data-release={META.edition}>
-      <p class="term-label text-amber">Current release</p>
-      <h2 id={`release-${META.edition}`} class="mt-1 font-display text-2xl font-bold uppercase">{META.edition} · First edition</h2>
-      <p class="term-label mt-1 text-dim">Released <time datetime={META.dataAsOf} data-release-date>{META.dataAsOf}</time></p>
+    <section class="box mt-8 p-5" aria-labelledby={`release-${META.edition}`} data-release={META.edition}>
+      <p class="kicker text-red">Current release</p>
+      <h2 id={`release-${META.edition}`} class="mt-1 font-display text-4xl uppercase">{META.edition} · First edition</h2>
+      <p class="kicker mt-1">Released <time datetime={META.dataAsOf} data-release-date>{META.dataAsOf}</time></p>
 
-      <h3 class="term-label mt-6 text-paper">What changed</h3>
+      <h3 class="sub-h mt-8">What changed</h3>
       <p class="prose-block mt-2">
         Launch. {META.universe.obsScored} of {META.universe.size} BLS occupations scored, {board.length} on the ranked board,
         {' '}{META.selectedCount} with full pages. There is no earlier edition, so there are no score deltas yet: the
         leaderboard's Δ column shows BLS's projected employment change instead. Score movement appears from {next}.
       </p>
 
-      <h3 class="term-label mt-6 text-paper">Notable movers</h3>
+      <h3 class="sub-h mt-8">Notable movers</h3>
       <ul class="prose-block mt-2 list-disc space-y-1 pl-5" data-movers>
         <li>
           Opening at the top:{' '}
@@ -49,9 +49,9 @@ const next = nextEdition(META.edition);
           {biggest.map((o, i) => <>{i > 0 && ', '}<a class="underline" href={occupationPath(o.slug)}>{o.title}</a> ({formatJobs(o.employment.value)} jobs in 2025)</>)}.
         </li>
       </ul>
-      <p class="term-label mt-2 text-dim">Sources · <CiteLink id="hoi-composite" /> · <CiteLink id="bls-ep" /></p>
+      <p class="kicker mt-2">Sources · <CiteLink id="hoi-composite" /> · <CiteLink id="bls-ep" /></p>
 
-      <h3 class="term-label mt-6 text-paper">Inputs</h3>
+      <h3 class="sub-h mt-8">Inputs</h3>
       <div class="table-scroll mt-2" role="region" aria-label={`Input files for ${META.edition}`} tabindex="0">
         <table class="data-table" data-inputs>
           <thead><tr><th scope="col">Input</th><th scope="col">File</th><th scope="col">Retrieved</th><th scope="col">SHA-256 (first 12)</th></tr></thead>
@@ -68,7 +68,7 @@ const next = nextEdition(META.edition);
         </table>
       </div>
 
-      <h3 class="term-label mt-6 text-paper">Next release</h3>
+      <h3 class="sub-h mt-8">Next release</h3>
       <p class="prose-block mt-2" data-next-release>
         Quarterly. The next edition, {next}, re-downloads every input and logs any changed file hashes here. Expected input
         bumps: OEWS May 2026 estimates in spring 2027 and BLS Employment Projections 2026–36 in late August 2027.

@@ -8,11 +8,12 @@ const { caption, id } = Astro.props;
 ---
 
 <div class="ledger">
-  <div class="ledger-head term-label" aria-hidden="true">
-    <span>Rank</span>
+  <div class="ledger-head kicker" aria-hidden="true">
+    <span>No.</span>
     <span>Occupation</span>
-    <span>OBS score</span>
-    <span class="text-right">BLS Δ jobs</span>
+    <span>Doom Score bar</span>
+    <span class="text-right">OBS</span>
+    <span>BLS Δ jobs</span>
     <span>BLS category</span>
   </div>
   <ol class="ledger-list" aria-label={caption} id={id}>

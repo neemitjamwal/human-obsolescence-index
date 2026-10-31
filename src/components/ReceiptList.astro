@@ -12,11 +12,11 @@ const sources = Astro.props.ids.map(sourceById);
   {
     sources.map((s) => (
       <li id={`src-${s.id}`} data-source-id={s.id} class="receipt">
-        <p class="term-label text-amber">[{s.id}]</p>
-        <p class="mt-1 font-semibold text-paper">{s.name}</p>
-        <p class="text-dim">{s.publisher}</p>
-        <p class="mt-2 text-sm leading-relaxed">{s.citation}</p>
-        <dl class="receipt-meta term-label mt-2">
+        <p class="kicker text-red">[{s.id}]</p>
+        <p class="mt-1 font-display text-xl uppercase leading-tight">{s.name}</p>
+        <p class="font-bold">{s.publisher}</p>
+        <p class="mt-2">{s.citation}</p>
+        <dl class="receipt-meta kicker mt-2">
           <div><dt>Source</dt><dd><a href={s.url} class="underline">{s.file ?? s.url}</a></dd></div>
           {s.methodologyUrl && <div><dt>Docs</dt><dd><a href={s.methodologyUrl} class="underline">{s.methodologyUrl.replace(/^https?:\/\//, '')}</a></dd></div>}
           <div><dt>Retrieved</dt><dd>{s.retrievedAt.slice(0, 10)}</dd></div>

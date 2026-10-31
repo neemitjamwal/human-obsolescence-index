@@ -7,15 +7,18 @@ import { categoryClass, clampScore, deltaDirection, deltaGlyph, formatDelta, sco
 const root = join(__dirname, '..');
 
 describe('site shell', () => {
-  it('names the index and exposes the four nav entries in order', () => {
+  it('names the index and exposes the five nav entries in order', () => {
     expect(SITE_NAME).toBe('Human Obsolescence Index');
-    expect(NAV_ITEMS.map((i) => i.label)).toEqual(['Leaderboard', 'Methodology', 'Press', 'About']);
+    expect(NAV_ITEMS.map((i) => i.label)).toEqual(['Front page', 'Leaderboard', 'Methodology', 'Press', 'About']);
     for (const item of NAV_ITEMS) expect(item.href.startsWith('/')).toBe(true);
   });
 
   it('marks the active nav item by path', () => {
-    const [board, methodology] = NAV_ITEMS;
-    expect(isActive(board, '/')).toBe(true);
+    const [front, board, methodology] = NAV_ITEMS;
+    expect(isActive(front, '/')).toBe(true);
+    expect(isActive(front, '/leaderboard/')).toBe(false);
+    expect(isActive(board, '/')).toBe(false);
+    expect(isActive(board, '/leaderboard/')).toBe(true);
     expect(isActive(board, '/occupations/telemarketers/')).toBe(true);
     expect(isActive(board, '/methodology/')).toBe(false);
     expect(isActive(methodology, '/methodology')).toBe(true);
@@ -25,6 +28,7 @@ describe('site shell', () => {
   it('ships a page for every nav target', () => {
     const pages: Record<string, string> = {
       '/': 'src/pages/index.astro',
+      '/leaderboard/': 'src/pages/leaderboard.astro',
       '/methodology/': 'src/pages/methodology.astro',
       '/press/': 'src/pages/press.astro',
       '/about/': 'src/pages/about.astro',
@@ -64,23 +68,33 @@ describe('ledger helpers', () => {
 describe('design system', () => {
   const css = readFileSync(join(root, 'src/styles/global.css'), 'utf8');
 
-  it('declares the Exchange tokens', () => {
-    for (const hex of ['#0d1117', '#161b22', '#21262d', '#2ea043', '#f85149', '#f0b429', '#e6edf3']) {
+  it('declares the Daily Doom palette and none of the v1 Exchange hexes', () => {
+    for (const hex of ['#0b0b0b', '#fffbea', '#ffe500', '#e4002b', '#1f5bff']) {
       expect(css.toLowerCase()).toContain(hex);
+    }
+    for (const v1 of ['#0d1117', '#161b22', '#21262d', '#2ea043', '#f85149', '#f0b429', '#e6edf3']) {
+      expect(css.toLowerCase()).not.toContain(v1);
     }
   });
 
-  it('loads JetBrains Mono and IBM Plex Mono from Google Fonts', () => {
+  it('loads exactly Anton, Archivo and Permanent Marker from Google Fonts with display=swap', () => {
     const layout = readFileSync(join(root, 'src/layouts/BaseLayout.astro'), 'utf8');
-    expect(layout).toContain('fonts.googleapis.com');
-    expect(layout).toContain('JetBrains+Mono');
-    expect(layout).toContain('IBM+Plex+Mono');
+    expect(layout).toContain('rel="preconnect" href="https://fonts.googleapis.com"');
+    const href = /href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/.exec(layout)![1];
+    const families = [...href.matchAll(/family=([^:&]+)/g)].map((m) => m[1]);
+    expect(families).toEqual(['Anton', 'Archivo', 'Permanent+Marker']);
+    expect(href).toContain('display=swap');
+    expect(layout).not.toMatch(/JetBrains|IBM\+Plex|Atkinson/);
+    expect(css).toMatch(/--font-display:\s*"Anton"/);
+    expect(css).toMatch(/--font-body:\s*"Archivo"/);
+    expect(css).toMatch(/--font-marker:\s*"Permanent Marker"/);
   });
 
-  it('keeps scanlines non-interactive with a reduced-motion fallback and no @apply', () => {
-    expect(css).toMatch(/\.scanlines\s*\{[^}]*pointer-events:\s*none/);
-    expect(css).toContain('prefers-reduced-motion: reduce');
+  it('animates only without reduced motion, and uses no @apply', () => {
+    expect(css).toContain('prefers-reduced-motion: no-preference');
+    expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{[^}]*\*,[\s\S]*?animation: none !important/);
     expect(css).not.toMatch(/@apply/);
+    expect(css).not.toContain('.scanlines');
   });
 
   it('uses Tailwind v4 without legacy config files or frameworks', () => {

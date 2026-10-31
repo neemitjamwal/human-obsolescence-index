@@ -39,46 +39,50 @@ const sourceIds = occupationSourceIds(o);
 const growingHighBand = (band === 'severe' || band === 'elevated') && change != null && change > 0;
 const growth = relativeGrowth(o.scores.trajectory.value ?? 100);
 const SENTIMENT: Record<string, string> = {
-  severe: 'Market sentiment: sell. The machines have read the job description.',
-  elevated: 'Market sentiment: volatile. Big parts of this job are already on the auction block.',
-  moderate: 'Market sentiment: hold. AI can touch some of this work; most of it still needs a person.',
-  low: 'Market sentiment: steady. Most of this work happens where software cannot reach.',
+  severe: 'Stop the presses. The machines have read the job description.',
+  elevated: 'Developing story: big parts of this job are already on the robots’ desk.',
+  moderate: 'Page six at most: AI can touch some of this work; most of it still needs a person.',
+  low: 'Slow news day: most of this work happens where software cannot reach.',
 };
 const rankLine =
   o.leaderboardRank != null
-    ? `Rank #${o.leaderboardRank} of ${META.leaderboard.size}`
+    ? `#${o.leaderboardRank} of ${META.leaderboard.size} on the Doom Index`
     : `Tracked off-board · ${o.inclusion.map(inclusionLabel).join(' · ')}`;
 const description = occupationDescription(o);
 ---
 
 <BaseLayout
-  title={`${o.title} · OBS ${obs ?? 'n/a'}`}
+  title={`${o.title} · Doom Score (OBS) ${obs ?? 'n/a'}`}
   description={description}
   image={ogImagePath(o.slug)}
   imageAlt={occupationImageAlt(o)}
   type="article"
 >
   <article class="mx-auto max-w-5xl px-4 py-10 md:px-6 md:py-14" data-occupation={o.slug} data-soc={o.soc}>
-    <nav aria-label="Breadcrumb" class="term-label text-dim">
-      <a href="/" class="underline">Leaderboard</a> <span aria-hidden="true">/</span> SOC {o.soc}
+    <nav aria-label="Breadcrumb" class="kicker">
+      <a href="/leaderboard/" class="underline">Leaderboard</a> <span aria-hidden="true">/</span> SOC {o.soc}
     </nav>
-    <p class="term-label mt-4 text-phosphor">{rankLine}</p>
-    <h1 class="mt-2 font-display text-2xl font-extrabold uppercase leading-tight tracking-tight md:text-4xl">{o.title}</h1>
+    <p class="eyebrow mt-4">Exclusive · {rankLine}</p>
+    <h1 class="mt-4 font-display text-[clamp(2.6rem,11vw,6rem)] uppercase leading-[1.1] [overflow-wrap:anywhere]"><span class="hl">{o.title}</span></h1>
 
     <section aria-labelledby="verdict-title" class="mt-8">
       <h2 id="verdict-title" class="sr-only">The verdict</h2>
-      <div class="grid gap-4 md:grid-cols-[3fr_2fr]">
-        <div class="panel p-5" data-verdict-obs>
-          <p class="term-label text-dim">Our number · OBS composite score</p>
-          <p class="mt-2 flex items-baseline gap-3">
-            <span class:list={['font-display text-6xl font-extrabold leading-none', band === 'severe' || band === 'elevated' ? 'text-alert' : band === 'moderate' ? 'text-amber' : 'text-phosphor']} data-obs-score={obs ?? 'null'}>
-              {obs ?? '—'}
-            </span>
-            <span class="term-label text-dim">/ 100</span>
-            {band && <span class="term-label text-paper">Band: {BAND_LABELS[band]}</span>}
-          </p>
-          {obs != null && <div class="mt-4" title={`OBS ${obs} = 0.65 × Exposure ${formatScore(o.scores.exposure.value)} + 0.35 × Trajectory ${formatScore(o.scores.trajectory.value)}`}><ScoreBar score={obs} /></div>}
-          {band && <p class="prose-block mt-4">{SENTIMENT[band]}</p>}
+      <div class="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div class="box-yellow anim-slam p-5" data-verdict-obs>
+          <p class="kicker text-red">Our number · Doom Score (OBS composite)</p>
+          <div class="splash mt-3">
+            <div class:list={['burst anim-spin', band === 'low' ? 'burst-blue' : band === 'moderate' ? 'burst-ink' : '']}>
+              <span class="burst-n" data-obs-score={obs ?? 'null'}>{obs ?? '—'}</span>
+              <span class="burst-of">Doom Score<br />out of 100</span>
+            </div>
+            <div class="grid gap-2">
+              {band && <p class:list={['stamp anim-thud', band === 'low' ? 'stamp-blue' : band === 'moderate' ? 'stamp-ink' : '']}>{BAND_LABELS[band]}</p>}
+              {band && <p class="fact">Band: <b>{BAND_LABELS[band]}</b> (our bands, not BLS's)</p>}
+              <p class="fact">{rankLine}</p>
+            </div>
+          </div>
+          {obs != null && <div class="mt-4" title={`Doom Score (OBS) ${obs} = 0.65 × Exposure ${formatScore(o.scores.exposure.value)} + 0.35 × Trajectory ${formatScore(o.scores.trajectory.value)}`}><ScoreBar score={obs} /></div>}
+          {band && <p class="roast mt-4">{SENTIMENT[band]}</p>}
           {
             growingHighBand && (
               <p class="prose-block mt-3 text-sm" data-growth-note={growth}>
@@ -99,19 +103,21 @@ const description = occupationDescription(o);
                 )}
               </p>
             )
-          }          <p class="term-label mt-3 text-dim">
+          }
+          <p class="kicker mt-3">
             Computed by the Human Obsolescence Index · <CiteLink id="hoi-composite" local />
           </p>
+          <p class="fine mt-2">AI exposure ≠ job loss · humanobsolescenceindex.com</p>
         </div>
-        <div class="panel p-5" data-verdict-bls>
-          <p class="term-label text-dim">Their label · official BLS category</p>
+        <div class="box p-5" data-verdict-bls>
+          <p class="kicker text-red">Their label · official BLS category</p>
           <p class="mt-3 text-lg"><CategoryChip category={o.blsCategory.value} /></p>
           <p class="prose-block mt-3 text-sm">
             The U.S. Bureau of Labor Statistics rates this occupation's relative AI exposure as
             {' '}<strong>{o.blsCategory.value ?? 'not rated'}</strong> on its own four-band scale (Low, Moderate, High, Very high).
             It is a government label, not our score, and BLS says exposure does not imply job loss.
           </p>
-          <p class="term-label mt-3 text-dim">Source · <CiteLink id={o.blsCategory.sourceId} local /></p>
+          <p class="kicker mt-3">Source · <CiteLink id={o.blsCategory.sourceId} local /></p>
         </div>
       </div>
     </section>
@@ -125,8 +131,8 @@ const description = occupationDescription(o);
 
     {
       !o.coverage.complete && (
-        <section class="mt-6 border border-amber p-4" aria-labelledby="coverage-title" data-coverage-flags>
-          <h2 id="coverage-title" class="term-label text-amber">Coverage gaps</h2>
+        <section class="box mt-6 border-red p-4" aria-labelledby="coverage-title" data-coverage-flags>
+          <h2 id="coverage-title" class="sub-h text-red">Coverage gaps</h2>
           <ul class="prose-block mt-2 list-disc pl-5">
             {o.coverage.notes.map((n) => <li data-coverage={n.field}>{n.message}</li>)}
           </ul>
@@ -134,9 +140,9 @@ const description = occupationDescription(o);
       )
     }
 
-    <section class="mt-10" aria-labelledby="breakdown-title">
-      <h2 id="breakdown-title" class="font-display text-xl font-bold uppercase tracking-wide">Score breakdown</h2>
-      <p class="prose-block mt-2 text-dim">
+    <section class="mt-14" aria-labelledby="breakdown-title">
+      <h2 id="breakdown-title" class="section-h">Score breakdown</h2>
+      <p class="prose-block mt-3">
         Two exposure measures, one observed and one theoretical, plus BLS's own projection. Percentiles rank this
         occupation against every other occupation BLS projects (100 = most exposed, or weakest projected growth).
       </p>
@@ -162,7 +168,7 @@ const description = occupationDescription(o);
             <tr data-component="eloundou">
               <th scope="row">
                 Eloundou et al. β (theoretical LLM exposure)
-                {c.eloundou.aggregation && <span class="block text-xs font-normal text-dim">Mean of {c.eloundou.onetCodes?.length} O*NET codes</span>}
+                {c.eloundou.aggregation && <span class="block text-xs font-normal">Mean of {c.eloundou.onetCodes?.length} O*NET codes</span>}
               </th>
               <td class="num">{c.eloundou.raw == null ? 'n/a' : c.eloundou.raw.toFixed(4)}</td>
               <td class="num">{formatPercentile(c.eloundou.percentile)}</td>
@@ -202,109 +208,109 @@ const description = occupationDescription(o);
           </tbody>
         </table>
       </div>
-      <p class="term-label mt-3 break-words text-dim">
+      <p class="kicker mt-3 break-words">
         OBS = round({w.exposure} × {formatScore(o.scores.exposure.value)} + {w.trajectory} × {formatScore(o.scores.trajectory.value)}) = {obs ?? 'n/a'}
       </p>
     </section>
 
-    <section class="mt-10" aria-labelledby="context-title">
-      <h2 id="context-title" class="font-display text-xl font-bold uppercase tracking-wide">Employment and wages</h2>
+    <section class="mt-14" aria-labelledby="context-title">
+      <h2 id="context-title" class="section-h">Employment and wages</h2>
       <dl class="stat-grid mt-4" data-employment-context>
         <div>
-          <dt class="term-label text-dim">Employment, 2025</dt>
-          <dd class="font-display text-xl font-bold">{formatJobs(o.employment.value)}</dd>
+          <dt class="kicker">Employment, 2025</dt>
+          <dd class="stat-num">{formatJobs(o.employment.value)}</dd>
           <dd class="mt-1"><CiteLink id={o.employment.sourceId} local /></dd>
         </div>
         <div>
-          <dt class="term-label text-dim">Projected, 2035</dt>
-          <dd class="font-display text-xl font-bold">{formatJobs(o.projectedChange.employment2035.value)}</dd>
+          <dt class="kicker">Projected, 2035</dt>
+          <dd class="stat-num">{formatJobs(o.projectedChange.employment2035.value)}</dd>
           <dd class="mt-1"><CiteLink id={o.projectedChange.employment2035.sourceId} local /></dd>
         </div>
         <div>
-          <dt class="term-label text-dim">Projected change, 2025–35</dt>
-          <dd class:list={['font-display text-xl font-bold', `change-${tone}`]}>
+          <dt class="kicker">Projected change, 2025–35</dt>
+          <dd class:list={['stat-num', `change-${tone}`]}>
             <span aria-hidden="true">{changeGlyph(tone)} </span>{formatSignedPercent(change)}
             <span class="text-sm">({formatSignedJobs(o.projectedChange.numeric.value)} jobs)</span>
           </dd>
           <dd class="mt-1"><CiteLink id={o.projectedChange.percent.sourceId} local /></dd>
         </div>
         <div>
-          <dt class="term-label text-dim">Openings per year, 2025–35 avg.</dt>
-          <dd class="font-display text-xl font-bold">{formatJobs(o.openings.value)}</dd>
-          <dd class="mt-1 text-xs text-dim">Includes openings left by workers who retire or change occupations. <CiteLink id={o.openings.sourceId} local /></dd>
+          <dt class="kicker">Openings per year, 2025–35 avg.</dt>
+          <dd class="stat-num">{formatJobs(o.openings.value)}</dd>
+          <dd class="mt-1 text-xs">Includes openings left by workers who retire or change occupations. <CiteLink id={o.openings.sourceId} local /></dd>
         </div>
         <div>
-          <dt class="term-label text-dim">Median annual wage, May 2025</dt>
-          <dd class="font-display text-xl font-bold">{formatUsd(o.medianWage.value)}{o.medianWage.topCoded && <span class="text-sm"> or more (top-coded)</span>}</dd>
+          <dt class="kicker">Median annual wage, May 2025</dt>
+          <dd class="stat-num">{formatUsd(o.medianWage.value)}{o.medianWage.topCoded && <span class="text-sm"> or more (top-coded)</span>}</dd>
           <dd class="mt-1"><CiteLink id={o.medianWage.sourceId} local /></dd>
         </div>
         <div>
-          <dt class="term-label text-dim">Wage-survey employment, May 2025</dt>
-          <dd class="font-display text-xl font-bold">{formatJobs(o.oesEmployment.value)}</dd>
-          <dd class="mt-1 text-xs text-dim">Excludes the self-employed. <CiteLink id={o.oesEmployment.sourceId} local /></dd>
+          <dt class="kicker">Wage-survey employment, May 2025</dt>
+          <dd class="stat-num">{formatJobs(o.oesEmployment.value)}</dd>
+          <dd class="mt-1 text-xs">Excludes the self-employed. <CiteLink id={o.oesEmployment.sourceId} local /></dd>
         </div>
       </dl>
       {
         o.oohUrl.value && (
-          <p class="term-label mt-3 text-dim">
-            Full BLS profile: <a class="underline text-paper" href={o.oohUrl.value}>Occupational Outlook Handbook</a> (link via <CiteLink id={o.oohUrl.sourceId} local />)
+          <p class="kicker mt-3">
+            Full BLS profile: <a class="underline text-ink" href={o.oohUrl.value}>Occupational Outlook Handbook</a> (link via <CiteLink id={o.oohUrl.sourceId} local />)
           </p>
         )
       }
     </section>
 
-    <section class="mt-10" aria-labelledby="tasks-title">
-      <h2 id="tasks-title" class="font-display text-xl font-bold uppercase tracking-wide">What this occupation does</h2>
-      <p class="prose-block mt-2 text-dim">
+    <section class="mt-14" aria-labelledby="tasks-title">
+      <h2 id="tasks-title" class="section-h">What this occupation does</h2>
+      <p class="prose-block mt-3">
         Occupation tasks as listed in the O*NET 31.0 Database, most important first. These are the tasks of the job;
         the exposure scores above rate the occupation as a whole, not each task one by one.
       </p>
       <ol class="mt-4 space-y-2" data-tasks>
         {
           o.tasks.map((t) => (
-            <li class="panel flex gap-3 p-3" data-task={t.id}>
-              <span class="term-label shrink-0 text-dim">{t.type}</span>
+            <li class="box flex gap-3 p-3" data-task={t.id}>
+              <span class="kicker shrink-0">{t.type}</span>
               <span class="prose-block text-base">{t.text}</span>
             </li>
           ))
         }
       </ol>
-      <p class="term-label mt-2 text-dim">Occupation tasks · <CiteLink id="onet-31" local /></p>
+      <p class="kicker mt-2">Occupation tasks · <CiteLink id="onet-31" local /></p>
     </section>
 
-    <section class="mt-10" aria-labelledby="whatnow-title">
-      <h2 id="whatnow-title" class="font-display text-xl font-bold uppercase tracking-wide">What now: adjacent roles that are growing</h2>
-      <p class="prose-block mt-2 text-dim">
+    <section class="mt-14" aria-labelledby="whatnow-title">
+      <h2 id="whatnow-title" class="section-h">What now: adjacent roles that are growing</h2>
+      <p class="prose-block mt-3">
         Related occupations from O*NET, kept only if BLS projects their employment to grow from 2025 to 2035. Growth is not
         immunity: check each one's own OBS before you retrain into the next queue.
       </p>
       <ul class="mt-4 grid gap-3 md:grid-cols-2" data-adjacent-roles>
         {
           o.adjacentRoles.map((r) => (
-            <li class="panel p-4" data-adjacent={r.soc}>
+            <li class="box p-4" data-adjacent={r.soc}>
               <p class="font-semibold">
                 {r.onIndex ? <a class="underline" href={occupationPath(r.slug)}>{r.title}</a> : r.title}
               </p>
               <p class="mt-2 text-sm">
-                <span class="change-growth font-display font-bold">{formatSignedPercent(r.projectedChangePercent.value)}</span>{' '}
+                <span class="change-growth font-display text-2xl">{formatSignedPercent(r.projectedChangePercent.value)}</span>{' '}
                 projected employment change, 2025–35 · <CiteLink id={r.projectedChangePercent.sourceId} local />
               </p>
-              <p class="term-label mt-1 text-dim">
+              <p class="kicker mt-1">
                 OBS {r.obs.value ?? 'n/a'} · SOC {r.soc} · O*NET {r.relatedness.replace('-', ' ').toLowerCase()} match
               </p>
             </li>
           ))
         }
       </ul>
-      {o.adjacentRoles.length < 2 && <p class="term-label mt-3 text-amber">Fewer than two related occupations are projected to grow.</p>}
-      <p class="term-label mt-2 text-dim">Related occupations · <CiteLink id="onet-31" local /></p>
+      {o.adjacentRoles.length < 2 && <p class="kicker mt-3 text-red">Fewer than two related occupations are projected to grow.</p>}
+      <p class="kicker mt-2">Related occupations · <CiteLink id="onet-31" local /></p>
     </section>
 
     <MuseumPrecedent soc={o.soc} />
 
     <section class="mt-12" aria-labelledby="receipts-title">
-      <h2 id="receipts-title" class="font-display text-xl font-bold uppercase tracking-wide">Receipts</h2>
-      <p class="prose-block mt-2 text-dim">
+      <h2 id="receipts-title" class="section-h">Receipts</h2>
+      <p class="prose-block mt-3">
         Every number on this page, traced to its source. The full manifest with SHA-256 hashes is in the
         {' '}<a class="underline" href="/press/#stat-pack">press stat pack</a>.
       </p>

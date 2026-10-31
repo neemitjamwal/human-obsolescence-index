@@ -6,20 +6,20 @@ interface Props {
   label?: string;
 }
 
-const { items, label = 'Market ticker' } = Astro.props;
-const colour = (t: TickerEntry['tone']) => (t === 'alert' ? 'text-alert' : t === 'phosphor' ? 'text-phosphor' : 'text-dim');
+const { items, label = 'Breaking news ticker' } = Astro.props;
 ---
 
 <section class="ticker" aria-label={label} data-ticker>
   <div class="ticker-track">
     {
       [false, true].map((duplicate) => (
-        <ul class="ticker-list term-label" aria-hidden={duplicate ? 'true' : undefined}>
+        <ul class="ticker-list" aria-hidden={duplicate ? 'true' : undefined}>
+          <li>Breaking</li>
           {items.map((item) => (
-            <li class="flex items-center gap-2">
-              <span class={colour(item.tone)} aria-hidden="true">{item.glyph}</span>
-              <span class="text-paper">{item.label}</span>
-              {item.value && <span class={colour(item.tone)}>{item.value}</span>}
+            <li>
+              <span aria-hidden="true">{item.glyph} </span>
+              {item.label}
+              {item.value && <> {item.value}</>}
             </li>
           ))}
         </ul>

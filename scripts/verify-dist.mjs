@@ -23,14 +23,22 @@ const astroDir = join(dist, '_astro');
 const cssFiles = existsSync(astroDir) ? readdirSync(astroDir).filter((f) => f.endsWith('.css')) : [];
 if (cssFiles.length === 0) failures.push('dist/_astro contains no CSS bundle');
 const css = cssFiles.map((f) => readFileSync(join(astroDir, f), 'utf8')).join('\n').toLowerCase();
-for (const token of ['#0d1117', '#161b22', '#21262d', '#2ea043', '#f85149', '#f0b429', '#e6edf3']) {
+// "The Daily Doom" palette (library/design-direction.md); the v1 Exchange palette must be gone.
+for (const token of ['#0b0b0b', '#fffbea', '#ffe500', '#e4002b', '#1f5bff']) {
   if (!css.includes(token)) failures.push(`compiled CSS is missing design token ${token}`);
 }
-for (const cls of ['.ledger-row', '.ticker-track', '.scanlines', '.category-chip', '.score-bar']) {
+for (const v1 of ['#0d1117', '#161b22', '#21262d', '#2ea043', '#f85149', '#f0b429', '#e6edf3']) {
+  if (css.includes(v1)) failures.push(`compiled CSS still contains v1 Exchange token ${v1}`);
+}
+for (const font of ['anton', 'archivo', 'permanent marker']) {
+  if (!css.includes(font)) failures.push(`compiled CSS does not use the ${font} font family`);
+}
+if (/jetbrains|ibm plex|atkinson/.test(css)) failures.push('compiled CSS still references a v1 font family');
+for (const cls of ['.ledger-row', '.ticker-track', '.category-chip', '.score-bar', '.masthead-name', '.burst', '.stamp', '.box-yellow', '.hl']) {
   if (!css.includes(cls)) failures.push(`compiled CSS is missing ${cls}`);
 }
 
-const NAV = ['/', '/methodology/', '/press/', '/about/'];
+const NAV = ['/', '/leaderboard/', '/methodology/', '/press/', '/about/'];
 for (const path of NAV) {
   const file = join(dist, path, 'index.html');
   if (!existsSync(file)) failures.push(`dist${path}index.html is missing`);
@@ -50,9 +58,14 @@ for (const file of htmlFiles) {
   if (/127\.0\.0\.1|localhost:/.test(html)) failures.push(`${rel} contains a 127.0.0.1 or localhost URL`);
 }
 
-const home = existsSync(join(dist, 'index.html')) ? readFileSync(join(dist, 'index.html'), 'utf8') : '';
-if (!home.includes('data-ticker')) failures.push('home page has no ticker strip');
-if (!home.includes('data-ledger-row')) failures.push('home page has no ledger rows');
+const frontPage = existsSync(join(dist, 'index.html')) ? readFileSync(join(dist, 'index.html'), 'utf8') : '';
+if (!frontPage.includes('data-ticker')) failures.push('front page has no ticker strip');
+if (!frontPage.includes('data-hero-slot')) failures.push('front page has no marked hero slot');
+if (!frontPage.includes('href="/leaderboard/"')) failures.push('front page does not link the full leaderboard');
+// The full ranked board lives on /leaderboard/; the checks below that say "home" refer to it.
+const home = existsSync(join(dist, 'leaderboard', 'index.html')) ? readFileSync(join(dist, 'leaderboard', 'index.html'), 'utf8') : '';
+if (!home) failures.push('dist/leaderboard/index.html is missing');
+if (!home.includes('data-ledger-row')) failures.push('leaderboard page has no ledger rows');
 
 // ---- Index site pages: data-driven checks against the committed data ----
 const data = JSON.parse(readFileSync(join(root, 'src/data/occupations.json'), 'utf8'));
@@ -175,7 +188,7 @@ else {
 for (const o of data.occupations) {
   if (!home.includes(`href="/occupations/${o.slug}/"`)) failures.push(`home does not link /occupations/${o.slug}/`);
 }
-if (home.includes('data-placeholder')) failures.push('home still contains placeholder content');
+if (home.includes('data-placeholder') || frontPage.includes('data-placeholder')) failures.push('home or leaderboard still contains placeholder content');
 
 // Band filter: buttons for All + every OBS band; rows keyed by composite band, independent of BLS category.
 const { bandFor } = await import('./lib/verdict-cards.mjs');
@@ -220,7 +233,7 @@ const OVERCLAIMS = [
   /high (OBS|score) means[^.]*(shrink|declin|hiring)/i,
 ];
 const plain = (html) => unescape(html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ');
-for (const page of ['index.html', 'methodology/index.html', 'about/index.html', 'press/index.html']) {
+for (const page of ['index.html', 'leaderboard/index.html', 'methodology/index.html', 'about/index.html', 'press/index.html']) {
   const text = plain(readDist(page) ?? '');
   for (const re of OVERCLAIMS) if (re.test(text)) failures.push(`${page} equates a high OBS with decline or reduced hiring (${re})`);
 }
@@ -403,7 +416,7 @@ if (failures.length > 0) {
 const cssBytes = cssFiles.reduce((sum, f) => sum + statSync(join(astroDir, f)).size, 0);
 console.log(
   `verify-dist OK: ${htmlFiles.length} HTML page(s), nav targets present, ${cssFiles.length} CSS bundle(s) ` +
-    `(${(cssBytes / 1024).toFixed(1)} KB) with all Exchange tokens, ticker + ledger on home, no localhost URLs; ` +
+    `(${(cssBytes / 1024).toFixed(1)} KB) with all Daily Doom tokens and no v1 tokens, ticker + hero slot on home, ledger on /leaderboard/, no localhost URLs; ` +
     `${occupationPages} occupation pages with all components (${citationLinks} citation links, all resolving to sources.json), ` +
     `${precedentLinks} museum precedent links, embed widget with ${embedEntriesCount} occupations, ${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes (${growthBranches.stronger} stronger-growth, ${growthBranches.weaker} weaker-growth), stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
     `${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +

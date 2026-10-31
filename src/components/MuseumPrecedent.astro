@@ -11,12 +11,13 @@ const precedent = MUSEUM_PRECEDENTS[Astro.props.soc];
 <div data-museum-precedent-slot={Astro.props.soc}>
   {
     precedent && (
-      <aside class="panel mt-10 border-l-4 border-l-amber p-5" aria-labelledby="precedent-title" data-museum-precedent={precedent.exhibit.slug}>
-        <h2 id="precedent-title" class="term-label text-amber">{precedentHeadline(precedent)}</h2>
+      <aside class="box-ink mt-12 p-5" aria-labelledby="precedent-title" data-museum-precedent={precedent.exhibit.slug}>
+        <p class="eyebrow">From the archives</p>
+        <h2 id="precedent-title" class="sub-h mt-3 text-yellow">{precedentHeadline(precedent)}</h2>
         <p class="prose-block mt-3">{precedent.why}</p>
-        <p class="prose-block mt-2 text-dim">{precedent.exhibit.context}</p>
-        <p class="mt-3">
-          <a class="term-label text-paper underline hover:text-phosphor" href={museumExhibitUrl(precedent.exhibit)}>
+        <p class="prose-block mt-2 text-[#e8e4d4]">{precedent.exhibit.context}</p>
+        <p class="mt-4">
+          <a class="btn btn-yellow" href={museumExhibitUrl(precedent.exhibit)}>
             Visit the {precedent.exhibit.name.toLowerCase()} exhibit at the Museum of Extinct Jobs →
           </a>
         </p>

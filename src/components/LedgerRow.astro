@@ -18,6 +18,7 @@ interface Props {
 }
 
 const { rank, occupation, obs, change, category = null, href, exposure = null, trajectory = null } = Astro.props;
+const band = scoreBand(obs);
 const tone = changeTone(change);
 const changeText = formatSignedPercent(change);
 const changeLabel =
@@ -26,20 +27,23 @@ const changeLabel =
     : tone === 'flat'
       ? 'BLS projects no change in employment, 2025 to 2035'
       : `BLS projects employment ${tone === 'decline' ? 'down' : 'up'} ${changeText.slice(1)}, 2025 to 2035`;
-const breakdown = `OBS ${obs} = 0.65 × Exposure ${exposure ?? 'n/a'} + 0.35 × Trajectory ${trajectory ?? 'n/a'}`;
+const breakdown = `Doom Score (OBS) ${obs} = 0.65 × Exposure ${exposure ?? 'n/a'} + 0.35 × Trajectory ${trajectory ?? 'n/a'}`;
 ---
 
 <li>
-  <a href={href} class="ledger-row" data-ledger-row data-rank={rank ?? undefined} data-obs={obs} data-band={scoreBand(obs)} data-category={category ?? 'none'} data-slug={href.split('/').filter(Boolean).pop()}>
-    <span class="ledger-rank">
-      {rank == null ? <><span aria-hidden="true">···</span><span class="sr-only">Unranked</span></> : <><span class="sr-only">Rank </span>{String(rank).padStart(3, '0')}</>}
+  <a href={href} class="ledger-row" data-ledger-row data-rank={rank ?? undefined} data-obs={obs} data-band={band} data-category={category ?? 'none'} data-slug={href.split('/').filter(Boolean).pop()}>
+    <span class:list={['ledger-rank', rank == null && 'ledger-rank-off']}>
+      {rank == null ? <><span aria-hidden="true">···</span><span class="sr-only">Unranked</span></> : <><span class="sr-only">Number </span>{rank}</>}
     </span>
     <span class="ledger-name">{occupation}</span>
     <span class="ledger-bar" title={breakdown}><ScoreBar score={obs} /></span>
-    <span class:list={['ledger-delta', `change-${tone}`]}>
-      <span aria-hidden="true">{changeGlyph(tone)} {changeText}</span>
-      <span class="sr-only">, {changeLabel}</span>
+    <span class:list={['ledger-score', `score-${band}`]} aria-hidden="true">{obs}</span>
+    <span class="ledger-meta">
+      <span class:list={['ledger-delta', `change-${tone}`]}>
+        <span aria-hidden="true">BLS {changeGlyph(tone)} {changeText}</span>
+        <span class="sr-only">, {changeLabel}</span>
+      </span>
+      <CategoryChip category={category} />
     </span>
-    <span class="ledger-chip"><CategoryChip category={category} /></span>
   </a>
 </li>

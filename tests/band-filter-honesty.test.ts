@@ -20,8 +20,8 @@ const OVERCLAIMS = [
   /high (OBS|score) means[^.]*(shrink|declin|hiring)/i,
 ];
 
-describe('home leaderboard band filter', () => {
-  const page = src('src/pages/index.astro');
+describe('leaderboard band filter', () => {
+  const page = src('src/pages/leaderboard.astro');
   const row = src('src/components/LedgerRow.astro');
 
   it('offers All plus every OBS band', () => {
@@ -59,6 +59,7 @@ describe('copy never equates a high OBS with decline or reduced hiring', () => {
   const files = [
     'src/pages/methodology.astro',
     'src/pages/index.astro',
+    'src/pages/leaderboard.astro',
     'src/pages/about.astro',
     'src/pages/press.astro',
     'src/pages/occupations/[slug].astro',

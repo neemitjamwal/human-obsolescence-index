@@ -13,7 +13,5 @@ const band = scoreBand(score);
   <span class="score-bar-track" aria-hidden="true">
     <span class="score-bar-fill" style={`width: ${score}%`}></span>
   </span>
-  <span class="score-bar-value">
-    {score}<span class="sr-only"> out of 100 OBS, {BAND_LABELS[band]} band</span>
-  </span>
+  <span class="sr-only">Doom Score {score} out of 100, {BAND_LABELS[band]} band</span>
 </span>
