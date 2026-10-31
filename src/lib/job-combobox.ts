@@ -162,6 +162,8 @@ export function createJobCombobox(o: JobComboboxOptions): JobCombobox {
         e.preventDefault();
         input.value = '';
         renderOptions([]);
+        // A script assignment fires no input event, and pages that track the committed job listen for one.
+        input.dispatchEvent(new Event('input', { bubbles: true }));
       }
     } else if (e.key === 'Tab') setOpen(false);
   });

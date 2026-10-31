@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { watchCornerEdits } from '../src/lib/battle-invalidate';
 import { createJobCombobox } from '../src/lib/job-combobox';
 import { createMatcher, type SearchIndex, type Suggestion } from '../src/lib/match';
 
@@ -31,6 +32,7 @@ class FakeEl {
   get text(): string { return this.textContent + this.nodes.map((n) => (typeof n === 'string' ? n : n.text)).join(''); }
   addEventListener(type: string, fn: (e: unknown) => void) { this.listeners.set(type, [...(this.listeners.get(type) ?? []), fn]); }
   dispatch(type: string, e: Record<string, unknown> = {}) { for (const fn of this.listeners.get(type) ?? []) fn({ preventDefault() {}, ...e }); }
+  dispatchEvent(e: Event) { this.dispatch(e.type); return true; }
   querySelectorAll(_sel: string) { return this.children.filter((c) => c.getAttribute('role') === 'option'); }
   querySelector(sel: string) { return this.children.find((c) => `#${c.id}` === sel) ?? null; }
   focus() {}
@@ -154,5 +156,67 @@ describe('job combobox keeps the highlight in step with the suggestions', () => 
     c.input.value = 'lawyer';
     await c.key('Enter');
     expect(c.submitted[0]!.slug).toBe(matcher('lawyer')[0].slug);
+  });
+});
+
+describe('Escape-clear withdraws a displayed battle', () => {
+  stubDom();
+
+  type Rec = { slug: string; title: string };
+  function battle(url: string) {
+    const lawyers = matcher('lawyers')[0];
+    const plumbers = matcher('plumbers')[0];
+    const a = setup();
+    const b = setup();
+    const picks: Record<'a' | 'b', Rec | null> = { a: { slug: lawyers.slug, title: lawyers.title }, b: { slug: plumbers.slug, title: plumbers.title } };
+    a.input.value = lawyers.title;
+    b.input.value = plumbers.title;
+    const zone = { hidden: false } as HTMLElement;
+    const u = new URL(url);
+    const location = { get pathname() { return u.pathname; }, get search() { return u.search; } };
+    const history = {
+      replaceState: (_s: unknown, _t: string, path: string) => {
+        const next = new URL(path, u);
+        u.pathname = next.pathname;
+        u.search = next.search;
+      },
+    };
+    watchCornerEdits({ inputs: { a: a.input as unknown as HTMLInputElement, b: b.input as unknown as HTMLInputElement }, picks, zone, location, history });
+    return { a, b, picks, zone, url: () => u.pathname + u.search };
+  }
+
+  it('Escape on a closed popup empties the input and emits an input event', async () => {
+    const c = setup();
+    let inputs = 0;
+    c.input.addEventListener('input', () => inputs++);
+    c.input.value = 'Lawyers';
+    await c.key('Escape');
+    expect(c.input.value).toBe('');
+    expect(inputs).toBe(1);
+  });
+
+  for (const side of ['a', 'b'] as const) {
+    it(`Escape in the ${side} corner of a restored battle hides the result/share zone, drops the pick and the ?a=&b= link`, async () => {
+      const t = battle('http://127.0.0.1:4521/vs/?a=lawyers&b=plumbers');
+      expect(t.url()).toBe('/vs/?a=lawyers&b=plumbers');
+      await t[side].key('Escape');
+      expect(t[side].input.value).toBe('');
+      expect(t.picks[side]).toBeNull();
+      expect(t.picks[side === 'a' ? 'b' : 'a']).not.toBeNull();
+      expect(t.zone.hidden).toBe(true);
+      // Reload reads only the URL, so nothing is left to restore the cleared corner.
+      expect(t.url()).toBe('/vs/');
+    });
+  }
+
+  it('Escape that only closes an open popup leaves the battle alone', async () => {
+    const t = battle('http://127.0.0.1:4521/vs/?a=lawyers&b=plumbers');
+    t.a.list.hidden = false;
+    t.a.input.dispatch('keydown', { key: 'ArrowDown' });
+    await t.a.type(t.a.input.value);
+    await t.a.key('Escape');
+    expect(t.a.list.hidden).toBe(true);
+    expect(t.zone.hidden).toBe(false);
+    expect(t.url()).toBe('/vs/?a=lawyers&b=plumbers');
   });
 });

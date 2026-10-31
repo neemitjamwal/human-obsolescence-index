@@ -1,6 +1,7 @@
 import { battleQueryPath, battlePairPath, battleTitle, committedPair, committedPick, battleView, parseBattleQuery, type BattleView, type Fighter, type Side } from './battle';
 import { battleCardAlt, battleCardFileName, battleCardText, drawBattleCard, loadBattleArt } from './battle-card';
 import { fillBattle, revealBattle } from './battle-dom';
+import { watchCornerEdits } from './battle-invalidate';
 import { fetchJson } from './hero';
 import { createJobCombobox, type JobCombobox } from './job-combobox';
 import { createMatcher, type Matcher, type SearchIndex, type Suggestion } from './match';
@@ -85,17 +86,7 @@ export function initBattlePage(page: HTMLElement) {
   const combos: Record<Side, JobCombobox> = { a: makeCombo('a'), b: makeCombo('b') };
   const typed = () => ({ a: inputs.a.value, b: inputs.b.value });
 
-  for (const side of ['a', 'b'] as Side[]) {
-    inputs[side].addEventListener('input', () => {
-      if (!picks[side] || committedPick(picks[side], inputs[side].value)) return;
-      picks[side] = null;
-      // The matchup on screen no longer matches the corners, so it must not stay up for sharing.
-      if (!zone.hidden) {
-        zone.hidden = true;
-        history.replaceState(null, '', location.pathname);
-      }
-    });
-  }
+  watchCornerEdits({ inputs, picks, zone, location, history });
 
   async function choose(side: Side, s: Suggestion) {
     const { bySlug } = await load();
