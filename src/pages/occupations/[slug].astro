@@ -17,6 +17,7 @@ import {
   formatUsd,
 } from '../../lib/format';
 import { BAND_LABELS, scoreBand } from '../../lib/ledger';
+import { occupationDescription, occupationImageAlt, ogImagePath } from '../../lib/seo';
 
 export function getStaticPaths() {
   return OCCUPATIONS.map((o) => ({ params: { slug: o.slug }, props: { o } }));
@@ -45,10 +46,16 @@ const rankLine =
   o.leaderboardRank != null
     ? `Rank #${o.leaderboardRank} of ${META.leaderboard.size}`
     : `Tracked off-board · ${o.inclusion.map(inclusionLabel).join(' · ')}`;
-const description = `${o.title}: OBS ${obs ?? 'n/a'}/100, BLS AI exposure category ${o.blsCategory.value ?? 'not rated'}, BLS projected employment change 2025–35 ${formatSignedPercent(change)}. Score breakdown, tasks and adjacent roles with sources.`;
+const description = occupationDescription(o);
 ---
 
-<BaseLayout title={`${o.title} · OBS ${obs ?? 'n/a'}`} description={description}>
+<BaseLayout
+  title={`${o.title} · OBS ${obs ?? 'n/a'}`}
+  description={description}
+  image={ogImagePath(o.slug)}
+  imageAlt={occupationImageAlt(o)}
+  type="article"
+>
   <article class="mx-auto max-w-5xl px-4 py-10 md:px-6 md:py-14" data-occupation={o.slug} data-soc={o.soc}>
     <nav aria-label="Breadcrumb" class="term-label text-dim">
       <a href="/" class="underline">Leaderboard</a> <span aria-hidden="true">/</span> SOC {o.soc}

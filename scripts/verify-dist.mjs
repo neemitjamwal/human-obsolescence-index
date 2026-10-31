@@ -172,6 +172,77 @@ if (!changelog.includes(`data-release="${data.meta.edition}"`) || !changelog.inc
 for (const page of ['about/index.html', 'methodology/index.html', 'press/index.html']) {
   if ((readDist(page) ?? '').includes('data-placeholder')) failures.push(`${page} still contains placeholder content`);
 }
+// ---- SEO: share meta, verdict cards, sitemap, robots, no local URLs anywhere ----
+const SITE = 'https://humanobsolescenceindex.com';
+const metaContent = (html, key) => {
+  const m = new RegExp(`<meta (?:property|name)="${key.replace(/:/g, ':')}" content="([^"]*)"`).exec(html);
+  return m ? m[1] : null;
+};
+/** Width and height from a PNG's IHDR chunk. */
+const pngSize = (buf) =>
+  buf.length > 24 && buf.toString('ascii', 1, 4) === 'PNG' ? { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) } : null;
+const checkedImages = new Map();
+let ogImages = 0;
+for (const file of htmlFiles) {
+  const rel = file.slice(dist.length + 1).replace(/\\/g, '/');
+  const html = readFileSync(file, 'utf8');
+  for (const key of ['og:title', 'og:description', 'og:image', 'og:url', 'twitter:title', 'twitter:description', 'twitter:image']) {
+    if (!metaContent(html, key)) failures.push(`${rel} has no ${key}`);
+  }
+  if (metaContent(html, 'twitter:card') !== 'summary_large_image') failures.push(`${rel} has no twitter:card summary_large_image`);
+  if (!/<link rel="canonical" href="https:\/\/humanobsolescenceindex\.com\/[^"]*"/.test(html)) failures.push(`${rel} has no production canonical link`);
+  const image = metaContent(html, 'og:image');
+  if (!image) continue;
+  if (!image.startsWith(`${SITE}/og/`) || !image.endsWith('.png')) {
+    failures.push(`${rel} og:image ${image} is not a ${SITE}/og/*.png card`);
+    continue;
+  }
+  if (metaContent(html, 'twitter:image') !== image) failures.push(`${rel} twitter:image differs from og:image`);
+  const imgRel = image.slice(SITE.length + 1);
+  if (!checkedImages.has(imgRel)) {
+    const path = join(dist, imgRel);
+    const size = existsSync(path) ? pngSize(readFileSync(path)) : null;
+    checkedImages.set(imgRel, size);
+    if (!size) failures.push(`${rel} og:image dist/${imgRel} is missing or not a PNG`);
+    else if (size.width !== 1200 || size.height !== 630) failures.push(`dist/${imgRel} is ${size.width}x${size.height}, expected 1200x630`);
+  }
+  ogImages += 1;
+}
+for (const o of data.occupations) {
+  const html = readDist(`occupations/${o.slug}/index.html`);
+  if (!html) continue;
+  const expected = `${SITE}/og/${o.slug}.png`;
+  if (metaContent(html, 'og:image') !== expected) failures.push(`occupations/${o.slug}/ og:image is not ${expected}`);
+  if (!unescape(metaContent(html, 'og:title') ?? '').startsWith(o.title)) {
+    failures.push(`occupations/${o.slug}/ og:title does not start with the occupation title`);
+  }
+  if (!(metaContent(html, 'og:description') ?? '').includes(`OBS ${o.scores.obs.value}/100`)) failures.push(`occupations/${o.slug}/ og:description does not state its OBS`);
+}
+
+const sitemap = readDist('sitemap.xml');
+let sitemapUrls = [];
+if (!sitemap) failures.push('dist/sitemap.xml is missing');
+else {
+  sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  const listed = new Set(sitemapUrls);
+  if (listed.size !== sitemapUrls.length) failures.push('sitemap.xml lists a URL twice');
+  for (const o of data.occupations) {
+    if (!listed.has(`${SITE}/occupations/${o.slug}/`)) failures.push(`sitemap.xml does not list /occupations/${o.slug}/`);
+  }
+  const pagePaths = htmlFiles.map((f) => `/${f.slice(dist.length + 1).replace(/\\/g, '/').replace(/index\.html$/, '')}`);
+  for (const p of pagePaths) if (!listed.has(`${SITE}${p}`)) failures.push(`sitemap.xml does not list ${p}`);
+  if (sitemapUrls.length !== pagePaths.length) failures.push(`sitemap.xml lists ${sitemapUrls.length} URLs for ${pagePaths.length} pages`);
+}
+const robots = readDist('robots.txt');
+if (!robots) failures.push('dist/robots.txt is missing');
+else if (!robots.includes(`Sitemap: ${SITE}/sitemap.xml`) || !robots.includes('User-agent: *')) failures.push('robots.txt does not reference the sitemap');
+
+const textFiles = walk(dist).filter((f) => /\.(html|xml|txt|css|js|mjs|json|csv|svg|webmanifest)$/.test(f));
+for (const file of textFiles) {
+  if (/127\.0\.0\.1|localhost/i.test(readFileSync(file, 'utf8'))) {
+    failures.push(`${file.slice(dist.length + 1).replace(/\\/g, '/')} contains a localhost or 127.0.0.1 URL`);
+  }
+}
 if (failures.length > 0) {
   console.error('verify-dist FAILED:');
   for (const f of failures) console.error(`  - ${f}`);
@@ -183,5 +254,7 @@ console.log(
   `verify-dist OK: ${htmlFiles.length} HTML page(s), nav targets present, ${cssFiles.length} CSS bundle(s) ` +
     `(${(cssBytes / 1024).toFixed(1)} KB) with all Exchange tokens, ticker + ledger on home, no localhost URLs; ` +
     `${occupationPages} occupation pages with all components (${citationLinks} citation links, all resolving to sources.json), ` +
-    `${rankedRows.length} leaderboard rows in data order, stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed`,
+    `${rankedRows.length} leaderboard rows in data order, stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
+    `${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
+    `${textFiles.length} text files free of localhost/127.0.0.1`,
 );
