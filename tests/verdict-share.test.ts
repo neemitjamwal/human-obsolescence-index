@@ -37,6 +37,18 @@ describe('first-name sanitizer', () => {
     expect(sanitizeName('a'.repeat(200))).toHaveLength(NAME_MAX);
   });
 
+  it('counts NAME_MAX in code points, never splitting an astral letter', () => {
+    const deseret = '\u{10400}';
+    const name = sanitizeName('a'.repeat(19) + deseret + 'bc');
+    expect(name).toBe('a'.repeat(19) + deseret);
+    expect(Array.from(name)).toHaveLength(NAME_MAX);
+    expect(name.isWellFormed()).toBe(true);
+    expect(sanitizeName('a'.repeat(20) + deseret)).toBe('a'.repeat(20));
+    expect(() => sharePath('telemarketers', name)).not.toThrow();
+    expect(sharePath('telemarketers', name)).toBe(`/v/telemarketers/?n=${'a'.repeat(19)}%F0%90%90%80`);
+    expect(nameFromQuery(name)).toBe(name);
+  });
+
   it('share links drop any name the sanitizer would have to change', () => {
     expect(nameFromQuery('Dave')).toBe('Dave');
     expect(nameFromQuery('Mary Jane')).toBe('Mary Jane');

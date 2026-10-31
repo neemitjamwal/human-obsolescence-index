@@ -93,6 +93,21 @@ describe('typo tolerance (Damerau-Levenshtein <= 1, tokens of 5+ characters)', (
     expect(match(fixture, 'cook')[0].soc).toBe('35-2014');
   });
 
+  it('judges typo eligibility on the typed token, before plural folding', () => {
+    // "nures" folds to "nure" (4 letters) but was typed with 5, so its transposition of "nurse" counts.
+    expect(tokenScore('nure', 'nurse', 'nures')).toBe(1.5);
+    expect(tokenScore('nure', 'nurse')).toBe(0);
+    const nurses: SearchIndex = { entries: [{ soc: '29-1141', slug: 'registered-nurses', title: 'Registered nurses', obs: 50, aliases: ['Nurse'] }], slang: [] };
+    expect(match(nurses, 'nures')[0]?.soc).toBe('29-1141');
+    expect(match(nurses, 'nrse')).toEqual([]);
+    expect(match(nurses, 'nuse')).toEqual([]);
+  });
+
+  it('live: "nures" finds Registered nurses', () => {
+    expect(socs('nures')).toContain('29-1141');
+    expect(socs('nures')[0]).toBe('29-1141');
+  });
+
   it('live: "acountant" surfaces accountants and auditors first', () => {
     expect(socs('acountant')[0]).toBe('13-2011');
   });

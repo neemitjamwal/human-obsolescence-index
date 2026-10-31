@@ -70,20 +70,28 @@ export function withinOneEdit(a: string, b: string): boolean {
   return s.slice(i) === l.slice(i + 1);
 }
 
-/** 3 exact, 2 prefix, 1.5 one-edit typo (query tokens of TYPO_MIN_LENGTH+ only), 0 no match. */
-export function tokenScore(query: string, name: string): number {
+/**
+ * 3 exact, 2 prefix, 1.5 one-edit typo, 0 no match. Typo eligibility follows the token as the user typed it
+ * (`typed`, before plural folding), so "nures" (5 letters, folded to "nure") still meets "nurse" while a typed
+ * 4-letter token never matches fuzzily.
+ */
+export function tokenScore(query: string, name: string, typed: string = query): number {
   if (query === name) return 3;
   if (query.length >= 2 && name.startsWith(query)) return 2;
-  if (query.length >= TYPO_MIN_LENGTH && withinOneEdit(query, name)) return 1.5;
+  if (typed.length >= TYPO_MIN_LENGTH && (withinOneEdit(query, name) || withinOneEdit(typed, name))) return 1.5;
   return 0;
 }
 
 type Name = { text: string; norm: string; toks: string[]; key: string; kind: MatchKind; note?: string };
 type Prepared = { entry: SearchEntry; names: Name[] };
 
-function content(toks: string[]): string[] {
+function contentWords(toks: string[]): string[] {
   const kept = toks.filter((t) => !STOPWORDS.has(t));
-  return (kept.length ? kept : toks).map(stem);
+  return kept.length ? kept : toks;
+}
+
+function content(toks: string[]): string[] {
+  return contentWords(toks).map(stem);
 }
 
 function prepareName(text: string, kind: MatchKind, note?: string): Name {
@@ -93,18 +101,19 @@ function prepareName(text: string, kind: MatchKind, note?: string): Name {
 }
 
 /** Exact means the same content words after normalizing, plural folding and dropping filler words. */
-function scoreName(qNorm: string, qToks: string[], name: Name): number {
+function scoreName(qNorm: string, qToks: string[], qTyped: string[], name: Name): number {
   if (qToks.join(' ') === name.key) return EXACT_BONUS[name.kind] + qToks.length * 3;
   const used = new Set<number>();
   let total = 0;
-  for (const q of qToks) {
+  for (let k = 0; k < qToks.length; k++) {
+    const q = qToks[k];
     let best = 0;
     for (let i = 0; i < name.toks.length; i++) {
-      const s = tokenScore(q, name.toks[i]);
+      const s = tokenScore(q, name.toks[i], qTyped[k]);
+      if (s > 0) used.add(i);
       if (s > best) best = s;
     }
     if (best === 0) return 0;
-    for (let i = 0; i < name.toks.length; i++) if (tokenScore(q, name.toks[i]) > 0) used.add(i);
     total += best;
   }
   const coverage = used.size / Math.max(1, name.toks.length);
@@ -129,17 +138,18 @@ export function createMatcher(index: SearchIndex): Matcher {
   return (query, limit = MAX_SUGGESTIONS) => {
     const qNorm = normalize(query);
     if (qNorm.length < 2) return [];
-    const qToks = content(qNorm.split(' '));
+    const qTyped = contentWords(qNorm.split(' '));
+    const qToks = qTyped.map(stem);
     const out: Suggestion[] = [];
     for (const { entry, names } of prepared) {
       let best: { score: number; name: Name } | null = null;
       for (const name of names) {
-        const score = scoreName(qNorm, qToks, name);
+        const score = scoreName(qNorm, qToks, qTyped, name);
         if (score > 0 && (!best || score > best.score)) best = { score, name };
       }
       if (!best) continue;
       // Breaks ties between equally good alias hits in favour of occupations whose official title also matches.
-      const titleScore = best.name.kind === 'title' ? 0 : scoreName(qNorm, qToks, names[0]);
+      const titleScore = best.name.kind === 'title' ? 0 : scoreName(qNorm, qToks, qTyped, names[0]);
       out.push({
         soc: entry.soc,
         slug: entry.slug,

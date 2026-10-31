@@ -133,3 +133,15 @@ describe('embed widget', () => {
     expect(page).not.toMatch(/fetch\(|XMLHttpRequest/);
   });
 });
+
+describe('embed typography', () => {
+  it('self-hosts Anton and Archivo with no third-party font request', () => {
+    const src = readFileSync(join(__dirname, '..', 'src/pages/embed.astro'), 'utf8');
+    for (const [family, file] of [['Anton', 'anton-latin.woff2'], ['Archivo', 'archivo-latin.woff2']]) {
+      expect(src).toMatch(new RegExp(`@font-face \\{ font-family: '${family}';[^}]*url\\(/fonts/${file}\\)`));
+      const bytes = readFileSync(join(__dirname, '..', 'public/fonts', file));
+      expect(bytes.subarray(0, 4).toString('latin1')).toBe('wOF2');
+    }
+    expect(src).not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
+  });
+});

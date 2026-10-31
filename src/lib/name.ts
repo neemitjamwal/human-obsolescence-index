@@ -12,10 +12,10 @@ export function sanitizeName(raw: unknown): string {
     .replace(/[’‘`]/g, "'")
     .replace(/[^\p{L} '.-]/gu, '')
     .replace(/\s+/g, ' ')
-    .trimStart()
-    .slice(0, NAME_MAX)
-    .trim();
-  return /\p{L}/u.test(cleaned) ? cleaned : '';
+    .trimStart();
+  // Counted in code points: slicing UTF-16 units could split an astral letter and leave a lone surrogate.
+  const short = Array.from(cleaned).slice(0, NAME_MAX).join('').trim();
+  return /\p{L}/u.test(short) ? short : '';
 }
 
 /**

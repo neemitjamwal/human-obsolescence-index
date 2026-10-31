@@ -27,6 +27,18 @@ export function battleOutcome(a: Pick<Fighter, 'slug' | 'obs'>, b: Pick<Fighter,
   return { kind: 'win', winner, loser: winner === 'a' ? 'b' : 'a', margin: Math.abs(a.obs - b.obs) };
 }
 
+/** A corner's stored pick counts only while its input still shows that job; any edit or clear withdraws it. */
+export function committedPick<T extends { title: string }>(pick: T | null, typed: string): T | null {
+  return pick && typed.trim() === pick.title ? pick : null;
+}
+
+/** Both corners committed, or null. */
+export function committedPair<T extends { title: string }>(picks: Record<Side, T | null>, typed: Record<Side, string>): { a: T; b: T } | null {
+  const a = committedPick(picks.a, typed.a);
+  const b = committedPick(picks.b, typed.b);
+  return a && b ? { a, b } : null;
+}
+
 export const BATTLE_FINE =
   'AI exposure ≠ job loss. "Safer" only means a lower Doom Score (65% AI exposure research + 35% BLS 2025–35 projection), not a forecast for anyone\'s job.';
 

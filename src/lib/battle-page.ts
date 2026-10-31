@@ -1,4 +1,4 @@
-import { battleQueryPath, battlePairPath, battleTitle, battleView, parseBattleQuery, type BattleView, type Fighter, type Side } from './battle';
+import { battleQueryPath, battlePairPath, battleTitle, committedPair, committedPick, battleView, parseBattleQuery, type BattleView, type Fighter, type Side } from './battle';
 import { battleCardAlt, battleCardFileName, battleCardText, drawBattleCard, loadBattleArt } from './battle-card';
 import { fillBattle, revealBattle } from './battle-dom';
 import { fetchJson } from './hero';
@@ -83,6 +83,19 @@ export function initBattlePage(page: HTMLElement) {
     });
   }
   const combos: Record<Side, JobCombobox> = { a: makeCombo('a'), b: makeCombo('b') };
+  const typed = () => ({ a: inputs.a.value, b: inputs.b.value });
+
+  for (const side of ['a', 'b'] as Side[]) {
+    inputs[side].addEventListener('input', () => {
+      if (!picks[side] || committedPick(picks[side], inputs[side].value)) return;
+      picks[side] = null;
+      // The matchup on screen no longer matches the corners, so it must not stay up for sharing.
+      if (!zone.hidden) {
+        zone.hidden = true;
+        history.replaceState(null, '', location.pathname);
+      }
+    });
+  }
 
   async function choose(side: Side, s: Suggestion) {
     const { bySlug } = await load();
@@ -91,16 +104,18 @@ export function initBattlePage(page: HTMLElement) {
     picks[side] = record;
     combos[side].select(record.title);
     const other: Side = side === 'a' ? 'b' : 'a';
-    if (picks[other] && !submitting) await fight();
-    else if (!picks[other]) {
+    const otherReady = committedPick(picks[other], inputs[other].value);
+    if (otherReady && !submitting) await fight();
+    else if (!otherReady) {
       combos[side].say(`${capital(corner[side])}: ${record.title}, Doom Score ${record.obs}. Now pick the ${corner[other]}.`);
       inputs[other].focus();
     }
   }
 
   async function fight() {
-    const { a, b } = picks;
-    if (!a || !b) return;
+    const pair = committedPair(picks, typed());
+    if (!pair) return;
+    const { a, b } = pair;
     const view = battleView(fighterOf(a), fighterOf(b));
     const { feed } = await load();
     fillBattle(result, view, { a: fighterOf(a), b: fighterOf(b) });

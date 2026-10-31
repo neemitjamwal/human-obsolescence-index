@@ -35,6 +35,8 @@ export function createJobCombobox(o: JobComboboxOptions): JobCombobox {
   const { input, list, status, idPrefix } = o;
   const minQuery = o.minQuery ?? 2;
   let options: Suggestion[] = [];
+  /** The trimmed query the current options were rendered for. */
+  let optionsQuery = '';
   let active = -1;
 
   const say = (msg: string) => {
@@ -65,8 +67,9 @@ export function createJobCombobox(o: JobComboboxOptions): JobCombobox {
     return `${s.title}, Doom Score ${s.obs}${s.kind !== 'title' ? `, matched ${s.matched}` : ''}`;
   }
 
-  function renderOptions(items: Suggestion[]) {
+  function renderOptions(items: Suggestion[], query = '') {
     options = items;
+    optionsQuery = query;
     const nodes = items.map((s, i) => {
       const li = document.createElement('li');
       li.id = `${idPrefix}-${i}`;
@@ -93,6 +96,8 @@ export function createJobCombobox(o: JobComboboxOptions): JobCombobox {
       return li;
     });
     list.replaceChildren(...nodes);
+    // A highlight from the previous list would point at a missing or different job.
+    setActive(-1);
   }
 
   async function update() {
@@ -105,7 +110,7 @@ export function createJobCombobox(o: JobComboboxOptions): JobCombobox {
     const matcher = await o.load();
     if (input.value.trim() !== q) return;
     const items = matcher(q);
-    renderOptions(items);
+    renderOptions(items, q);
     setOpen(items.length > 0);
     say(
       items.length
@@ -122,7 +127,8 @@ export function createJobCombobox(o: JobComboboxOptions): JobCombobox {
       return;
     }
     const matcher = await o.load();
-    const pick = active >= 0 ? options[active] : matcher(q)[0];
+    const highlighted = active >= 0 && optionsQuery === q ? options[active] : undefined;
+    const pick = highlighted ?? matcher(q)[0];
     await o.onSubmit(q, pick ?? null, matcher);
   }
 

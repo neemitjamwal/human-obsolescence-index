@@ -69,7 +69,7 @@ const description = occupationDescription(o);
       <h2 id="verdict-title" class="sr-only">The verdict</h2>
       <div class="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div class="box-yellow anim-slam p-5" data-verdict-obs>
-          <p class="kicker text-red">Our number · Doom Score (OBS composite)</p>
+          <p class="kicker"><span class="hl-red [-webkit-text-stroke:0]">Our number</span> · Doom Score (OBS composite)</p>
           <div class="splash mt-3">
             <div class:list={['burst anim-spin', band === 'low' ? 'burst-blue' : band === 'moderate' ? 'burst-ink' : '']}>
               <span class="burst-n" data-obs-score={obs ?? 'null'}>{obs ?? '—'}</span>

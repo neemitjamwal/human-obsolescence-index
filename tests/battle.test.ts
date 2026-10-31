@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BATTLE_PAIRS, BATTLE_QUIPS, FEATURED_BATTLE, REFEREE_SAME, REFEREE_TIE, REFEREE_WIN, TIE_QUIPS } from '../src/data/battles';
 import { BANNED_ROAST_PHRASES, WORKER_MOCKING_PHRASES } from '../src/data/roasts';
-import { battleOutcome, battleQueryPath, battleView, isCuratedPair, pairKey, parseBattleQuery, type Fighter } from '../src/lib/battle';
+import { battleOutcome, battleQueryPath, committedPair, committedPick, battleView, isCuratedPair, pairKey, parseBattleQuery, type Fighter } from '../src/lib/battle';
 import { battleCardAlt, battleCardFileName, battleCardText } from '../src/lib/battle-card';
 import { CURATED_BATTLES, FEATURED, fighter } from '../src/lib/battle-data';
 import { SITE_DOMAIN } from '../src/lib/site';
@@ -112,6 +112,26 @@ describe('curated battles', () => {
         expect(b.a.obs).toBe(b.b.obs);
       }
     }
+  });
+});
+
+describe('committed picks', () => {
+  const lawyers = { slug: 'lawyers', title: 'Lawyers' };
+  const plumbers = { slug: 'plumbers', title: 'Plumbers, pipefitters, and steamfitters' };
+  it('a pick counts only while its input still shows that job', () => {
+    expect(committedPick(lawyers, 'Lawyers')).toBe(lawyers);
+    expect(committedPick(lawyers, '  Lawyers ')).toBe(lawyers);
+    expect(committedPick(lawyers, '')).toBeNull();
+    expect(committedPick(lawyers, 'Lawyer')).toBeNull();
+    expect(committedPick(null, 'Lawyers')).toBeNull();
+  });
+
+  it('clearing the red corner after choosing it withdraws the matchup', () => {
+    const picks = { a: lawyers, b: plumbers };
+    expect(committedPair(picks, { a: 'Lawyers', b: plumbers.title })).toEqual({ a: lawyers, b: plumbers });
+    expect(committedPair(picks, { a: '', b: plumbers.title })).toBeNull();
+    expect(committedPair(picks, { a: 'Law', b: plumbers.title })).toBeNull();
+    expect(committedPair({ a: lawyers, b: null }, { a: 'Lawyers', b: plumbers.title })).toBeNull();
   });
 });
 
