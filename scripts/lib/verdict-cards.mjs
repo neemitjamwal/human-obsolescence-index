@@ -154,7 +154,7 @@ export function renderVerdictSvg(card) {
 
   const lower = site
     ? `<text x="${pad}" y="${afterTitle + 30}" font-family="${MONO}" font-size="26" fill="${C.dim}">Occupations ranked by AI exposure and</text>
-  <text x="${pad}" y="${afterTitle + 64}" font-family="${MONO}" font-size="26" fill="${C.dim}">BLS projected decline. With receipts.</text>`
+  <text x="${pad}" y="${afterTitle + 64}" font-family="${MONO}" font-size="26" fill="${C.dim}">BLS projected job growth. With receipts.</text>`
     : categoryChip(card.category, pad, Math.min(afterTitle, 470));
 
   const band = card.band;

@@ -36,6 +36,7 @@ const pct = (n: number | undefined) => `${Math.round((n ?? 0) * 100)}%`;
 const change = o.projectedChange.percent.value;
 const tone = changeTone(change);
 const sourceIds = occupationSourceIds(o);
+const growingHighBand = (band === 'severe' || band === 'elevated') && change != null && change > 0;
 const SENTIMENT: Record<string, string> = {
   severe: 'Market sentiment: sell. The machines have read the job description.',
   elevated: 'Market sentiment: volatile. Big parts of this job are already on the auction block.',
@@ -77,6 +78,15 @@ const description = occupationDescription(o);
           </p>
           {obs != null && <div class="mt-4" title={`OBS ${obs} = 0.65 × Exposure ${formatScore(o.scores.exposure.value)} + 0.35 × Trajectory ${formatScore(o.scores.trajectory.value)}`}><ScoreBar score={obs} /></div>}
           {band && <p class="prose-block mt-4">{SENTIMENT[band]}</p>}
+          {
+            growingHighBand && (
+              <p class="prose-block mt-3 text-sm" data-growth-note>
+                Read the fine print: BLS still projects this occupation to grow{' '}
+                <strong class="change-growth">{formatSignedPercent(change)}</strong> from 2025 to 2035. The high score comes from
+                heavy AI exposure and growth that trails most other occupations, not from a shrinking job.
+              </p>
+            )
+          }
           <p class="term-label mt-3 text-dim">
             Computed by the Human Obsolescence Index · <CiteLink id="hoi-composite" local />
           </p>
@@ -116,7 +126,7 @@ const description = occupationDescription(o);
       <h2 id="breakdown-title" class="font-display text-xl font-bold uppercase tracking-wide">Score breakdown</h2>
       <p class="prose-block mt-2 text-dim">
         Two exposure measures, one observed and one theoretical, plus BLS's own projection. Percentiles rank this
-        occupation against every other occupation BLS projects (100 = most exposed, or fastest shrinking).
+        occupation against every other occupation BLS projects (100 = most exposed, or weakest projected growth).
       </p>
       <div class="table-scroll mt-4" role="region" aria-label="Score breakdown table" tabindex="0">
         <table class="data-table">
@@ -157,7 +167,7 @@ const description = occupationDescription(o);
               <td><CiteLink id={o.scores.exposure.sourceId} local /></td>
             </tr>
             <tr data-component="employment-change">
-              <th scope="row">BLS projected employment change, 2025–35 (decline ranks high)</th>
+              <th scope="row">BLS projected employment change, 2025–35 (weaker growth ranks high)</th>
               <td class="num">{formatSignedPercent(c.employmentChange.raw)}</td>
               <td class="num">{formatPercentile(c.employmentChange.percentile)}</td>
               <td class="num">feeds Trajectory</td>

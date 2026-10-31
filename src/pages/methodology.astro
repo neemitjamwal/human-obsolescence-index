@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CiteLink from '../components/CiteLink.astro';
 import ReceiptList from '../components/ReceiptList.astro';
-import { META, SOURCES, UNIVERSE, leaderboard, occupationPath, sourceById } from '../lib/data';
+import { META, OCCUPATIONS, SOURCES, UNIVERSE, leaderboard, occupationPath, sourceById } from '../lib/data';
 import { formatPercentile, formatScore, formatSignedPercent } from '../lib/format';
 import { BLS_LIMITS, MICROSOFT_WARNING, STANFORD_CANARIES, STANFORD_CANARIES_PAPER } from '../data/references';
 
@@ -14,6 +14,10 @@ const ex = leaderboard()[0];
 const blsSource = sourceById('bls-ai-exposure');
 const msft = sourceById('msft-ai-applicability');
 const missingMsft = UNIVERSE.filter((x) => x.msft == null).sort((a, b) => a.title.localeCompare(b.title));
+const interp = OCCUPATIONS.find((x) => x.slug === 'interpreters-and-translators');
+const severe = UNIVERSE.filter((x) => x.obs != null && x.obs >= 75);
+const severeTotal = severe.length;
+const severeGrowing = severe.filter((x) => (x.changePercent ?? 0) > 0).length;
 const pctWord = (n: number) => `${Math.round(n * 100)}%`;
 const coverageRows: [string, number, string][] = [
   ['Occupations in the universe', u.size, u.source],
@@ -27,7 +31,7 @@ const coverageRows: [string, number, string][] = [
 ];
 ---
 
-<BaseLayout title="Methodology" description={`How the OBS score is built: ${pctWord(w.exposure)} AI exposure, ${pctWord(w.trajectory)} BLS projected trajectory, with coverage disclosure, BLS's own limits and every source.`}>
+<BaseLayout title="Methodology" description={`How the OBS score is built: ${pctWord(w.exposure)} AI exposure, ${pctWord(w.trajectory)} relative BLS projected trajectory, with coverage disclosure, BLS's own limits and every source.`}>
   <article class="mx-auto max-w-3xl px-4 py-12 md:px-6">
     <p class="term-label text-phosphor">Prospectus · {META.edition} edition · Data as of {META.dataAsOf}</p>
     <h1 class="mt-3 font-display text-3xl font-extrabold uppercase tracking-tight">Methodology</h1>
@@ -36,19 +40,34 @@ const coverageRows: [string, number, string][] = [
       <h2 id="summary-title" class="font-display text-xl font-bold uppercase">In plain language</h2>
       <div class="prose-block mt-3 space-y-3">
         <p>
-          The OBS score (0 to 100) blends two questions. <strong>How much of this job's work can AI touch?</strong> That is
-          Exposure, {pctWord(w.exposure)} of the score. <strong>Does BLS expect this job to shrink?</strong> That is
-          Trajectory, {pctWord(w.trajectory)} of the score.
+          The OBS score (0 to 100) blends two rankings. <strong>How much of this job's work can AI touch, compared with
+          every other occupation?</strong> That is Exposure, {pctWord(w.exposure)} of the score. <strong>How weak is BLS's
+          projected employment change for this job, compared with every other occupation?</strong> That is Trajectory,
+          {' '}{pctWord(w.trajectory)} of the score.
         </p>
         <p>
           Exposure averages two independent measures with equal weight: Microsoft's measure of where people actually use AI
           at work ({pctWord(w.microsoft)}) and Eloundou et al.'s rating of where large language models could do or speed up
           the work ({pctWord(w.eloundou)}). Each is converted to a percentile rank first, so neither scale dominates.
         </p>
-        <p>
-          A high score means a job is both exposed and projected to shrink. It is not a prediction that the job disappears.
-          Several of our inputs say so themselves, and we quote them below.
+        <p data-high-score-meaning>
+          A high score means a job ranks near the top on AI exposure and near the bottom on projected growth, relative to
+          the other {u.size} occupations BLS projects. It is a ranking, not a forecast. It does not mean the job is
+          shrinking, it does not mean hiring is falling, and it is not a prediction that the job disappears. The index has
+          no hiring data at all.
         </p>
+        {
+          interp && (
+            <p data-growth-counterexample>
+              Exhibit A: <a class="underline" href={occupationPath(interp.slug)}>{interp.title.toLowerCase()}</a> score OBS
+              {' '}{interp.scores.obs.value} (Severe) while BLS projects their employment to grow
+              {' '}{formatSignedPercent(interp.projectedChange.percent.value)} from 2025 to 2035 (<CiteLink id="bls-ep" />).
+              {' '}{severeGrowing} of the {severeTotal} Severe occupations in the universe are projected to grow. A high score
+              says the machines can reach the work and the job is not outgrowing the field. It does not say the job is
+              losing workers. Several of our inputs make the same point about themselves, and we quote them below.
+            </p>
+          )
+        }
       </div>
     </section>
 
@@ -72,9 +91,10 @@ const coverageRows: [string, number, string][] = [
           <p class="term-label text-dim">Step 3 · Trajectory</p>
           <p class="mt-1 font-display text-sm font-bold">{f.trajectory}</p>
           <p class="prose-block mt-2 text-dim">
-            The input is BLS's projected employment change, 2025–35 (<CiteLink id="bls-ep" />). The sign is flipped so that
-            shrinking occupations rank high. An occupation BLS expects to grow gets a low Trajectory even if it is highly
-            exposed.
+            The input is BLS's projected employment change, 2025–35 (<CiteLink id="bls-ep" />). The sign is flipped and
+            turned into a percentile, so the occupations with the weakest projected change rank highest. Trajectory is
+            relative: a job BLS expects to grow can still score in the middle or higher if most occupations are projected to
+            grow faster. Faster projected growth always means a lower Trajectory.
           </p>
         </li>
         <li class="panel p-4">
@@ -167,22 +187,26 @@ const coverageRows: [string, number, string][] = [
     </section>
 
     <section aria-labelledby="canaries-title" class="mt-10" id="reality-check" data-canaries>
-      <h2 id="canaries-title" class="font-display text-xl font-bold uppercase">Reality check: the canaries</h2>
+      <h2 id="canaries-title" class="font-display text-xl font-bold uppercase">Reality check: the canaries (outside evidence)</h2>
       <div class="prose-block mt-2 space-y-3">
         <p>
-          Exposure scores are forecasts of what AI could touch. For what is actually happening, the best evidence we know of
-          is Stanford's "Canaries in the Coal Mine?" study by Brynjolfsson, Chandar and Chen (Stanford Digital Economy Lab), using ADP
-          payroll data. Its August 2026 update found <strong>no widespread displacement</strong> of workers overall.
+          The OBS ranks what AI could touch. It has no hiring input and cannot tell you what is happening to any one
+          occupation's workers. For that, the best outside evidence we know of is Stanford's "Canaries in the Coal Mine?"
+          study by Brynjolfsson, Chandar and Chen (Stanford Digital Economy Lab), using ADP payroll data. It is a separate
+          study with its own measures, not an input to our score. Its August 2026 update found
+          {' '}<strong>no widespread displacement</strong> of workers overall.
         </p>
         <p>
-          But for 22- to 25-year-olds in the most AI-exposed occupations, the employment gap has widened to
-          {' '}<strong>19%</strong> (first reported as 13% in August 2025), with an 11% absolute decline for the most-exposed young
-          workers from November 2022 to June 2026. The mechanism is <strong>reduced hiring, not firings</strong>: the
-          entry-level door is narrowing, rather than workers being fired.
+          Its warning is narrower. For 22- to 25-year-olds in the most AI-exposed occupations, the study's relative
+          employment gap has widened to <strong>19%</strong> (first reported as 13% in August 2025), with an 11% absolute
+          decline for the most-exposed young workers from November 2022 to June 2026. In that population the study finds
+          {' '}<strong>reduced hiring, not firings</strong>: the entry-level door is narrowing, rather than workers being
+          walked out.
         </p>
         <p>
-          So read a high OBS as "fewer people will be let in", not "everyone gets walked out". We cite and link this study; we
-          do not re-host its data.
+          That finding is about early-career workers in exposed jobs, in the study's data. It is not a reading of any OBS
+          score, and a high OBS on this site is not evidence that a given occupation is hiring less. The canaries are why
+          we watch; the OBS is where we point the binoculars. We cite and link this study; we do not re-host its data.
         </p>
       </div>
       <ul class="mt-4 space-y-2 text-sm">

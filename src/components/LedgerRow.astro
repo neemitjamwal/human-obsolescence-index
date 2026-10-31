@@ -2,7 +2,7 @@
 import CategoryChip from './CategoryChip.astro';
 import ScoreBar from './ScoreBar.astro';
 import { changeGlyph, changeTone, formatSignedPercent } from '../lib/format';
-import type { BlsCategory } from '../lib/ledger';
+import { scoreBand, type BlsCategory } from '../lib/ledger';
 
 interface Props {
   /** Leaderboard rank; null for tracked occupations that are not on the ranked board. */
@@ -30,7 +30,7 @@ const breakdown = `OBS ${obs} = 0.65 × Exposure ${exposure ?? 'n/a'} + 0.35 × 
 ---
 
 <li>
-  <a href={href} class="ledger-row" data-ledger-row data-rank={rank ?? undefined} data-obs={obs} data-category={category ?? 'none'} data-slug={href.split('/').filter(Boolean).pop()}>
+  <a href={href} class="ledger-row" data-ledger-row data-rank={rank ?? undefined} data-obs={obs} data-band={scoreBand(obs)} data-category={category ?? 'none'} data-slug={href.split('/').filter(Boolean).pop()}>
     <span class="ledger-rank">
       {rank == null ? <><span aria-hidden="true">···</span><span class="sr-only">Unranked</span></> : <><span class="sr-only">Rank </span>{String(rank).padStart(3, '0')}</>}
     </span>

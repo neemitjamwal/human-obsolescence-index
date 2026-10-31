@@ -127,6 +127,29 @@ for (const o of data.occupations) {
 }
 if (home.includes('data-placeholder')) failures.push('home still contains placeholder content');
 
+// Band filter: buttons for All + every OBS band; rows keyed by composite band, independent of BLS category.
+const { bandFor } = await import('./lib/verdict-cards.mjs');
+for (const id of ['all', 'severe', 'elevated', 'moderate', 'low']) {
+  if (!new RegExp(`data-band-filter="${id}" aria-pressed="(true|false)"`).test(home)) failures.push(`home has no OBS band filter button "${id}"`);
+}
+if (!home.includes('data-band-filters') || !/aria-label="Filter both lists by OBS score band"/.test(home)) failures.push('home band filter group is not labelled as an OBS band filter');
+if (!/aria-live="polite"[^>]*data-filter-status/.test(home)) failures.push('home filter has no live-region result count');
+const homeRows = [...home.matchAll(/data-obs="(\d+)" data-band="([a-z]+)" data-category="([^"]+)"[^>]*data-slug="([^"]+)"/g)];
+if (homeRows.length !== data.occupations.length) failures.push(`home renders ${homeRows.length} band-keyed rows, data has ${data.occupations.length}`);
+for (const [, obs, band, , slug] of homeRows) {
+  if (bandFor(Number(obs)).id !== band) failures.push(`home row ${slug} has data-band="${band}" but OBS ${obs} is ${bandFor(Number(obs)).id}`);
+}
+const screenersRow = homeRows.find((m) => m[4] === 'transportation-security-screeners');
+if (!screenersRow || screenersRow[2] !== 'elevated' || screenersRow[3] !== 'Moderate') {
+  failures.push('transportation-security-screeners row should be OBS band elevated with BLS category Moderate');
+}
+const homeScripts = [
+  ...[...home.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]),
+  ...[...home.matchAll(/<script[^>]*src="(\/_astro\/[^"]+\.js)"/g)].map((m) => readDist(m[1].slice(1)) ?? ''),
+].join('\n');
+if (!/dataset\.band\b/.test(homeScripts) || !/bandFilter/.test(homeScripts)) failures.push('home filter script does not key rows by data-band');
+if (/dataset\.category/.test(homeScripts)) failures.push('home filter script still keys rows by BLS category');
+
 // Methodology: verbatim BLS limits, live coverage count, Microsoft warning, Canaries, every source.
 const methodology = readDist('methodology/index.html') ?? '';
 const unescape = (s) => s.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
@@ -138,6 +161,38 @@ for (const [key, quote] of Object.entries(BLS_LIMITS)) {
 if (!methodologyText.includes(MICROSOFT_WARNING)) failures.push('methodology is missing the Microsoft out-of-scope warning');
 if (!methodology.includes(`data-msft-missing>${data.meta.universe.microsoftMissing}<`)) failures.push('methodology does not render meta.universe.microsoftMissing');
 if (!/reduced hiring, not firings/.test(methodology) || !methodology.includes('19%')) failures.push('methodology Canaries reality check is incomplete');
+// Honesty: a high OBS is a relative ranking, never a claim of decline or reduced hiring.
+const OVERCLAIMS = [
+  /both exposed and projected to shrink/i,
+  /fewer people will be let in/i,
+  /expects? this job to shrink/i,
+  /ranked by AI exposure and (BLS )?projected decline/i,
+  /high (OBS|score) means[^.]*(shrink|declin|hiring)/i,
+];
+const plain = (html) => unescape(html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ');
+for (const page of ['index.html', 'methodology/index.html', 'about/index.html', 'press/index.html']) {
+  const text = plain(readDist(page) ?? '');
+  for (const re of OVERCLAIMS) if (re.test(text)) failures.push(`${page} equates a high OBS with decline or reduced hiring (${re})`);
+}
+const methodologyPlain = plain(methodology);
+if (!methodologyPlain.includes('does not mean the job is shrinking') || !methodology.includes('data-growth-counterexample')) {
+  failures.push('methodology does not state that a high OBS is not a shrinking job');
+}
+if (!/outside evidence/.test(methodologyPlain) || !/22- to 25-year-olds/.test(methodologyPlain)) failures.push('methodology does not scope Canaries as outside evidence about young workers');
+let growthNotes = 0;
+for (const o of data.occupations) {
+  const html = readDist(`occupations/${o.slug}/index.html`);
+  const obs = o.scores.obs.value;
+  const change = o.projectedChange.percent.value;
+  if (!html || obs == null) continue;
+  const growingHigh = obs >= 50 && change != null && change > 0;
+  if (growingHigh !== html.includes('data-growth-note')) failures.push(`occupations/${o.slug}/ growth note mismatch (OBS ${obs}, change ${change})`);
+  if (growingHigh) growthNotes += 1;
+  for (const re of OVERCLAIMS) if (re.test(plain(html))) failures.push(`occupations/${o.slug}/ equates a high OBS with decline (${re})`);
+}
+const interpreters = readDist('occupations/interpreters-and-translators/index.html') ?? '';
+if (!/data-growth-note[\s\S]*?class="change-growth"[^>]*>\+2%</.test(interpreters)) failures.push('interpreters page does not render its +2% BLS projection in the growth note');
+
 for (const s of manifest.sources) {
   if (!methodology.includes(`id="src-${s.id}"`)) failures.push(`methodology does not list source ${s.id}`);
 }
@@ -254,7 +309,7 @@ console.log(
   `verify-dist OK: ${htmlFiles.length} HTML page(s), nav targets present, ${cssFiles.length} CSS bundle(s) ` +
     `(${(cssBytes / 1024).toFixed(1)} KB) with all Exchange tokens, ticker + ledger on home, no localhost URLs; ` +
     `${occupationPages} occupation pages with all components (${citationLinks} citation links, all resolving to sources.json), ` +
-    `${rankedRows.length} leaderboard rows in data order, stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
+    `${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes, stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
     `${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
     `${textFiles.length} text files free of localhost/127.0.0.1`,
 );

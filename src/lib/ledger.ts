@@ -25,6 +25,14 @@ export const BAND_LABELS: Record<ScoreBand, string> = {
   low: 'Low',
 };
 
+export const SCORE_BANDS: ScoreBand[] = ['severe', 'elevated', 'moderate', 'low'];
+export type BandFilter = ScoreBand | 'all';
+
+/** Leaderboard filter predicate. Keys on the composite OBS band only, never the BLS category. */
+export function matchesBandFilter(band: string | undefined, filter: string | undefined): boolean {
+  return filter === 'all' || band === filter;
+}
+
 /** A positive delta means the occupation became more obsolete. */
 export function deltaDirection(delta: number | null | undefined): DeltaDirection {
   if (delta == null || !Number.isFinite(delta) || delta === 0) return 'flat';
