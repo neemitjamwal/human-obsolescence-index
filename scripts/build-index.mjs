@@ -1,6 +1,7 @@
 // Human Obsolescence Index data pipeline: download -> parse -> join -> score -> emit.
 // Usage: npm run build:index [-- --refresh]   (exits non-zero on any failed or non-data download)
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SOURCES } from './lib/config.mjs';
@@ -13,15 +14,20 @@ import {
   parseMicrosoft,
   parseOews,
   parseOnet,
+  parseOnetTitles,
 } from './lib/parse.mjs';
 import { assignSlugs, buildUniverse } from './lib/join.mjs';
 import { computeScores } from './lib/score.mjs';
 import { selectOccupations } from './lib/select.mjs';
-import { buildMeta, compositeSource, occupationPayload, universeEntry, writeJson } from './lib/emit.mjs';
+import { buildMeta, compositeSource, occupationPayload, pickTasks, universeEntry, writeJson } from './lib/emit.mjs';
+import { buildVerdicts, verdictsJson } from './lib/verdicts.mjs';
+import { buildSearchIndex } from './lib/search-index.mjs';
+import { SLANG_ALIASES } from '../src/data/slang-aliases.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const cacheDir = join(root, '.cache', 'raw');
 const dataDir = join(root, 'src', 'data');
+const publicDataDir = join(root, 'public', 'data');
 
 async function main() {
   const refresh = process.argv.includes('--refresh');
@@ -36,6 +42,7 @@ async function main() {
   const microsoft = parseMicrosoft(dl['msft-ai-applicability'].buffer.toString('utf8'));
   const eloundou = parseEloundou(dl['openai-gpts-are-gpts'].buffer.toString('utf8'));
   const onet = parseOnet(dl['onet-31'].buffer);
+  const onetTitles = parseOnetTitles(dl['onet-31'].buffer);
   console.log(
     [
       `parse: EP Table 1.2 ${ep.table12Rows} data rows -> ${ep.occupations.length} Line items; Table 1.5 fastest declining ${ep.fastestDeclining.length}`,
@@ -44,6 +51,7 @@ async function main() {
       `       crosswalk ${crosswalk.onetToSoc.size} O*NET codes -> ${crosswalk.socToOnet.size} SOC codes`,
       `       Microsoft ${microsoft.size} rows; Eloundou ${eloundou.size} rows`,
       `       O*NET 31.0 tasks ${onet.counts.tasks}, task ratings ${onet.counts.ratings}, related ${onet.counts.related}`,
+      `       O*NET 31.0 reported titles ${onetTitles.counts.reported}, job titles ${onetTitles.counts.jobTitles}`,
     ].join('\n'),
   );
 
@@ -51,6 +59,7 @@ async function main() {
   assignSlugs(universe);
   const scores = computeScores(universe.map((u) => ({ msft: u.msft, eld: u.eld, changePercent: u.ep.changePercent })));
   universe.forEach((u, i) => (u.scores = scores[i]));
+  for (const u of universe) u.topTask = pickTasks(u.onetCodes, onet.tasksByOnet)[0]?.text ?? null;
 
   const selection = selectOccupations(universe, ep.fastestDeclining);
   const bySoc = new Map(universe.map((u) => [u.soc, u]));
@@ -77,8 +86,22 @@ async function main() {
   sources.push(compositeSource(meta));
 
   mkdirSync(dataDir, { recursive: true });
-  writeJson(join(dataDir, 'occupations.json'), { meta, occupations, universe: universe.map(universeEntry) });
+  const universeOut = universe.map(universeEntry);
+  writeJson(join(dataDir, 'occupations.json'), { meta, occupations, universe: universeOut });
   writeJson(join(dataDir, 'sources.json'), { generatedFor: meta.edition, sources });
+
+  const verdicts = buildVerdicts(universeOut, selectedSocs);
+  const verdictMeta = { edition: meta.edition, dataAsOf: meta.dataAsOf, count: verdicts.length, published: verdicts.filter((v) => v.hasFullPage).length };
+  writeFileSync(join(dataDir, 'verdicts.json'), verdictsJson(verdictMeta, verdicts));
+  const searchIndex = buildSearchIndex({ verdicts, universe, titles: onetTitles, slang: SLANG_ALIASES, edition: meta.edition });
+  mkdirSync(publicDataDir, { recursive: true });
+  const searchJson = JSON.stringify(searchIndex);
+  writeFileSync(join(publicDataDir, 'search-index.json'), searchJson);
+  const aliasCount = searchIndex.entries.reduce((n, e) => n + e.aliases.length, 0);
+  console.log(
+    `verdicts: ${verdicts.length} scored occupations (${verdictMeta.published} with full pages); search index: ${searchIndex.entries.length} entries, ` +
+      `${aliasCount} O*NET aliases + ${searchIndex.slang.length} slang, ${(searchJson.length / 1024).toFixed(1)} KB raw, ${(gzipSync(searchJson).length / 1024).toFixed(1)} KB gzip`,
+  );
 
   const u = meta.universe;
   console.log(
@@ -92,7 +115,7 @@ async function main() {
   for (const o of occupations.slice(0, 3)) {
     console.log(`  #${o.rank} ${o.soc} ${o.title}: OBS ${o.scores.obs.value} (Exposure ${o.scores.exposure.value}, Trajectory ${o.scores.trajectory.value}, BLS ${o.blsCategory.value})`);
   }
-  console.log(`emit: src/data/occupations.json, src/data/sources.json (${sources.length} sources)`);
+  console.log(`emit: src/data/occupations.json, src/data/sources.json (${sources.length} sources), src/data/verdicts.json, public/data/search-index.json`);
 }
 
 main().catch((err) => {

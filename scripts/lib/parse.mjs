@@ -275,3 +275,38 @@ export function parseOnet(zipBuffer) {
   for (const list of relatedByOnet.values()) list.sort((a, b) => (a.index ?? 1e9) - (b.index ?? 1e9));
   return { tasksByOnet, relatedByOnet, counts: { tasks: taskRows.length, ratings: ratingRows.length, related: related.length } };
 }
+
+/**
+ * O*NET 31.0 title lists keyed by O*NET-SOC code: "Sample of Reported Titles" and "Job Titles" (the 31.0 name
+ * of the former "Alternate Titles" file: Job Title, Short Title, Source(s)).
+ */
+export function parseOnetTitles(zipBuffer) {
+  const zip = readZip(zipBuffer);
+  const read = (base) => {
+    const entry = zip.findByBaseName(base);
+    if (!entry) throw new Error(`O*NET zip has no "${base}"`);
+    return parseTsv(zip.read(entry).toString('utf8'));
+  };
+  const reported = read('Sample of Reported Titles.txt');
+  requireColumns(reported, ['O*NET-SOC Code', 'Reported Job Title', 'Shown in My Next Move'], 'Sample of Reported Titles');
+  const jobTitles = read('Job Titles.txt');
+  requireColumns(jobTitles, ['O*NET-SOC Code', 'Job Title', 'Short Title'], 'Job Titles');
+  const group = (rows, toItem) => {
+    const map = new Map();
+    for (const r of rows) {
+      const code = r['O*NET-SOC Code'];
+      if (!ONET_RE.test(code)) continue;
+      const item = toItem(r);
+      if (!item.title) continue;
+      if (!map.has(code)) map.set(code, []);
+      map.get(code).push(item);
+    }
+    return map;
+  };
+  const short = (v) => (v && v !== 'n/a' ? cleanText(v) : null);
+  return {
+    reportedByOnet: group(reported, (r) => ({ title: cleanText(r['Reported Job Title']), shown: r['Shown in My Next Move'] === 'Y' })),
+    jobTitlesByOnet: group(jobTitles, (r) => ({ title: cleanText(r['Job Title']), short: short(r['Short Title']) })),
+    counts: { reported: reported.length, jobTitles: jobTitles.length },
+  };
+}

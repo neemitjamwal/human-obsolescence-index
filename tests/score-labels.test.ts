@@ -40,6 +40,8 @@ const SOURCE_FILES = [
   'src/lib/seo.ts',
   'src/lib/site.ts',
   'scripts/lib/verdict-cards.mjs',
+  'src/data/roasts.ts',
+  'src/lib/roast.ts',
 ];
 
 const plain = (html: string) =>

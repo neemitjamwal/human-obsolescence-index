@@ -159,6 +159,8 @@ export function universeEntry(u) {
     eld: u.eld,
     changePercent: u.ep.changePercent,
     oesEmployment: u.oes?.totEmp ?? null,
+    employment: thousandsToJobs(u.ep.emp2025),
+    medianWage: u.oes?.medianAnnual ?? null,
     pMsft: r4(s.pMsft),
     pEld: r4(s.pEld),
     pTrajectory: r4(s.pTrajectory),
@@ -166,6 +168,7 @@ export function universeEntry(u) {
     trajectory: r2(s.trajectory),
     obs: s.obs,
     missing: coverageOf(u, null, null).missing,
+    topTask: u.topTask ?? null,
   };
 }
 
@@ -225,6 +228,9 @@ export function buildMeta({ universe, selection, fastestDeclining, downloads, mi
       eld: 'openai-gpts-are-gpts',
       changePercent: 'bls-ep',
       oesEmployment: 'bls-oews',
+      employment: 'bls-ep',
+      medianWage: 'bls-oews',
+      topTask: 'onet-31',
       pMsft: 'hoi-composite',
       pEld: 'hoi-composite',
       pTrajectory: 'hoi-composite',

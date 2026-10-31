@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gzipSync } from 'node:zlib';
 import { filesWithLocalUrls, filesWithRedListOutsideCiteLinks, unexpectedDataFiles } from './lib/dist-hygiene.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -46,6 +47,15 @@ for (const path of NAV) {
 
 if (!existsSync(join(dist, 'favicon.svg'))) failures.push('dist/favicon.svg is missing');
 
+// Search index: served from /data/ for lazy fetching, within the gzip budget, never inlined into a page.
+const searchIndexPath = join(dist, 'data', 'search-index.json');
+let searchIndexGzip = 0;
+if (!existsSync(searchIndexPath)) failures.push('dist/data/search-index.json is missing');
+else {
+  searchIndexGzip = gzipSync(readFileSync(searchIndexPath)).length;
+  if (searchIndexGzip > 150 * 1024) failures.push(`search-index.json is ${(searchIndexGzip / 1024).toFixed(1)} KB gzip, budget 150 KB`);
+}
+
 const htmlFiles = walk(dist).filter((f) => f.endsWith('.html'));
 for (const file of htmlFiles) {
   const rel = file.slice(dist.length + 1).replace(/\\/g, '/');
@@ -56,6 +66,7 @@ for (const file of htmlFiles) {
     if (!html.includes(`href="${path}"`)) failures.push(`${rel} header/footer does not link ${path}`);
   }
   if (/127\.0\.0\.1|localhost:/.test(html)) failures.push(`${rel} contains a 127.0.0.1 or localhost URL`);
+  if (html.includes('"aliases":[')) failures.push(`${rel} inlines the search index instead of fetching it lazily`);
 }
 
 const frontPage = existsSync(join(dist, 'index.html')) ? readFileSync(join(dist, 'index.html'), 'utf8') : '';
@@ -419,6 +430,6 @@ console.log(
     `(${(cssBytes / 1024).toFixed(1)} KB) with all Daily Doom tokens and no v1 tokens, ticker + hero slot on home, ledger on /leaderboard/, no localhost URLs; ` +
     `${occupationPages} occupation pages with all components (${citationLinks} citation links, all resolving to sources.json), ` +
     `${precedentLinks} museum precedent links, embed widget with ${embedEntriesCount} occupations, ${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes (${growthBranches.stronger} stronger-growth, ${growthBranches.weaker} weaker-growth), stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
-    `${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
+    `search index ${(searchIndexGzip / 1024).toFixed(1)} KB gzip; ${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
     `${textFiles.length} text files free of localhost/127.0.0.1, red-list sources only as cite-only links, licensing credits on /about/`,
 );
