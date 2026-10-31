@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { filesWithLocalUrls, filesWithRedListOutsideCiteLinks, unexpectedDataFiles } from './lib/dist-hygiene.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
@@ -361,10 +362,20 @@ if (!robots) failures.push('dist/robots.txt is missing');
 else if (!robots.includes(`Sitemap: ${SITE}/sitemap.xml`) || !robots.includes('User-agent: *')) failures.push('robots.txt does not reference the sitemap');
 
 const textFiles = walk(dist).filter((f) => /\.(html|xml|txt|css|js|mjs|json|csv|svg|webmanifest)$/.test(f));
-for (const file of textFiles) {
-  if (/127\.0\.0\.1|localhost/i.test(readFileSync(file, 'utf8'))) {
-    failures.push(`${file.slice(dist.length + 1).replace(/\\/g, '/')} contains a localhost or 127.0.0.1 URL`);
-  }
+for (const rel of filesWithLocalUrls(dist)) failures.push(`${rel} contains a localhost or 127.0.0.1 URL`);
+
+// ---- Licensing and red-list discipline ----
+for (const rel of filesWithRedListOutsideCiteLinks(dist)) failures.push(`${rel} mentions WEF or layoffs.fyi outside a labeled cite-only link`);
+for (const rel of unexpectedDataFiles(dist, ['stat-pack/hoi-top50.csv'])) failures.push(`dist/${rel} is a raw data file the Index must not host`);
+for (const s of manifest.sources) {
+  if (/weforum|layoffs|canar|stanford|adp\.com/i.test(`${s.id} ${s.url}`)) failures.push(`sources.json uses red-listed or cite-only source ${s.id} as a data input`);
+}
+const about = unescape(readDist('about/index.html') ?? '');
+for (const needle of ['O*NET 31.0 Database', 'CC BY 4.0', 'Microsoft', 'OpenAI', 'MIT License', 'U.S. Bureau of Labor Statistics', 'public domain']) {
+  if (!about.includes(needle)) failures.push(`about page licensing credits are missing "${needle}"`);
+}
+for (const host of ['weforum.org', 'layoffs.fyi']) {
+  if (!new RegExp(`<a [^>]*href="https://(www\\.)?${host.replace('.', '\\.')}[^"]*"[^>]*data-cite-only`).test(about)) failures.push(`about page has no labeled cite-only link to ${host}`);
 }
 if (failures.length > 0) {
   console.error('verify-dist FAILED:');
@@ -379,5 +390,5 @@ console.log(
     `${occupationPages} occupation pages with all components (${citationLinks} citation links, all resolving to sources.json), ` +
     `${precedentLinks} museum precedent links, embed widget with ${embedEntriesCount} occupations, ${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes (${growthBranches.stronger} stronger-growth, ${growthBranches.weaker} weaker-growth), stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
     `${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
-    `${textFiles.length} text files free of localhost/127.0.0.1`,
+    `${textFiles.length} text files free of localhost/127.0.0.1, red-list sources only as cite-only links, licensing credits on /about/`,
 );

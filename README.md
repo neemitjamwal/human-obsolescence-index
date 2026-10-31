@@ -25,9 +25,9 @@ If your system Node is older, run each command through a temporary Node, for exa
 | `npm run build` | Writes the press stat pack (`public/stat-pack/`), renders the OG verdict cards (`og:cards`), then runs `astro build` into `dist/` |
 | `npm run preview` | Serves `dist/` |
 | `npm run og:cards` | Renders a 1200×630 terminal-style verdict PNG per occupation (title, OBS score, band, BLS category chip, index mark) plus the site card into `public/og/`. Deterministic and idempotent: unchanged cards are not rewritten, stale ones are removed |
-| `npm run test` | vitest: deterministic OBS recomputation from a fixture, join sanity (SOC codes, never titles), coverage flags, manifest completeness, page content, OG cards, sitemap/robots |
+| `npm run test` | vitest: deterministic OBS recomputation from a fixture, join sanity (SOC codes, never titles), coverage flags, manifest completeness, page content, OG cards, sitemap/robots, licensing credits and red-list discipline (plus a scan of `dist/` for local URLs, red-list mentions and raw data files when a build exists) |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm run verify` | Post-build checks on `dist/`: every page and score component, every citation resolving to `sources.json`, leaderboard order, stat pack, methodology quotes, share meta on every page, every `og:image` present as a 1200×630 PNG, a sitemap listing every page, robots.txt, and no `localhost`/`127.0.0.1` URLs anywhere in the output |
+| `npm run verify` | Post-build checks on `dist/`: every page and score component, every citation resolving to `sources.json`, leaderboard order, stat pack, methodology quotes, share meta on every page, every `og:image` present as a 1200×630 PNG, a sitemap listing every page, robots.txt, no `localhost`/`127.0.0.1` URLs anywhere in the output, licensing credits on `/about/`, WEF and layoffs.fyi only as labeled cite-only links, and no raw data files beyond the stat pack |
 
 The full gate is `npm run test`, `npm run typecheck`, `npm run build` and `npm run verify`. All four must exit 0. `build` does not run the pipeline: the generated JSON is committed, so Netlify never downloads from BLS.
 
@@ -38,7 +38,8 @@ The full gate is `npm run test`, `npm run typecheck`, `npm run build` and `npm r
 - `src/pages/index.astro` (leaderboard), `src/pages/occupations/[slug].astro` (one page per occupation), `methodology`, `press`, `changelog`, `about`.
 - `src/lib/seo.ts`: share descriptions, OG image paths, and the page list behind `sitemap.xml` and `robots.txt`.
 - `scripts/og-cards.mjs` and `scripts/lib/verdict-cards.mjs`: the sharp card renderer. `public/og/` and `public/stat-pack/` are generated and gitignored.
-- `scripts/verify-dist.mjs`: the post-build checks.
+- `scripts/verify-dist.mjs`: the post-build checks. `scripts/lib/dist-hygiene.mjs`: the local-URL, red-list and raw-data scans shared by `verify` and the tests.
+- `src/data/credits.ts`: the licensing credits and cite-only list rendered on `/about/`.
 
 ## Quarterly update workflow
 
@@ -73,7 +74,7 @@ The pipeline never publishes a partial or silently wrong index. `npm run build:i
 - Exposure is never presented as job loss. The disclaimer appears on every occupation page, and BLS's interpretation limits are quoted verbatim on the methodology page, along with Microsoft's out-of-scope warning.
 - The official BLS category is always shown beside the OBS score and attributed to BLS.
 - Missing components get visible coverage flags. The count of occupations without Microsoft scores is rendered from the data, never hardcoded.
-- WEF Future of Jobs 2025 and layoffs.fyi may appear only as labeled cite-links, never as data inputs. The Stanford "Canaries" paper is cited and linked; its raw data is not re-hosted.
+- WEF Future of Jobs 2025 and layoffs.fyi may appear only as labeled cite-links (listed in `src/data/credits.ts` and rendered on `/about/`), never as data inputs. The Stanford "Canaries" paper is cited and linked; its raw data is not re-hosted.
 
 ## Licensing
 

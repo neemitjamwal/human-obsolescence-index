@@ -1,16 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { META, SOURCES, leaderboard } from '../lib/data';
+import { META, leaderboard } from '../lib/data';
+import { CITE_ONLY, LICENSING_CREDITS } from '../data/credits';
 
 const board = leaderboard();
-const onet = SOURCES.find((s) => s.id === 'onet-31')!;
-const CREDITS = [
-  { id: 'bls', who: 'U.S. Bureau of Labor Statistics', what: 'Employment Projections 2025–35, AI exposure categories, OEWS May 2025 wages and employment, and the O*NET–SOC crosswalk.', license: 'U.S. public domain (17 U.S.C. § 105)', url: 'https://www.bls.gov/opub/copyright-information.htm' },
-  { id: 'onet', who: 'O*NET 31.0 Database', what: onet.citation, license: 'CC BY 4.0', url: onet.licenseUrl! },
-  { id: 'microsoft', who: 'Microsoft Research, "Working with AI"', what: 'AI applicability scores by occupation (Tomlinson, Jaffe, Wang, Counts & Suri, 2026).', license: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/' },
-  { id: 'openai', who: 'OpenAI / Eloundou, Manning, Mishkin & Rock, "GPTs are GPTs"', what: 'Occupation-level LLM exposure ratings (dv_rating_beta), Science 384 (2024).', license: 'MIT License', url: 'https://github.com/openai/GPTs-are-GPTs/blob/main/LICENSE' },
-  { id: 'fonts', who: 'JetBrains Mono, IBM Plex Mono, Atkinson Hyperlegible', what: 'Typefaces served by Google Fonts.', license: 'SIL Open Font License 1.1', url: 'https://openfontlicense.org/' },
-];
 ---
 
 <BaseLayout title="About" description="What the Human Obsolescence Index is, how it stays honest, and who supplies the data.">
@@ -57,7 +50,7 @@ const CREDITS = [
       <h2 id="licensing-title" class="font-display text-xl font-bold uppercase">Licensing and credits</h2>
       <ul class="mt-4 space-y-3" data-credits>
         {
-          CREDITS.map((c) => (
+          LICENSING_CREDITS.map((c) => (
             <li class="panel p-4" data-credit={c.id}>
               <p class="font-semibold">{c.who}</p>
               <p class="mt-1 text-sm text-dim">{c.what}</p>
@@ -71,6 +64,21 @@ const CREDITS = [
         Human Obsolescence Index. Cited but never used as data: the Stanford Digital Economy Lab "Canaries" study (linked on
         the <a class="underline" href="/methodology/#reality-check">methodology page</a>).
       </p>
+      <h3 class="term-label mt-6 text-amber">Cited, never used as data</h3>
+      <p class="prose-block mt-2 text-dim">
+        These are copyrighted or proprietary. We link to them as labeled citations only; none of their data is an input to
+        any score, and none of it is redistributed.
+      </p>
+      <ul class="mt-3 space-y-1.5 text-sm" data-cite-only-list>
+        {
+          CITE_ONLY.map((c) => (
+            <li>
+              <a class="underline" href={c.url} rel="noopener" data-cite-only>{c.name}</a>
+              <span class="text-amber"> · cite-only</span>
+            </li>
+          ))
+        }
+      </ul>
     </section>
   </article>
 </BaseLayout>
