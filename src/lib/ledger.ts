@@ -33,6 +33,14 @@ export function matchesBandFilter(band: string | undefined, filter: string | und
   return filter === 'all' || band === filter;
 }
 
+/**
+ * Trajectory is a 0-100 percentile where higher means weaker projected change, so below 50 means the
+ * occupation's projected growth beats most others.
+ */
+export function relativeGrowth(trajectory: number): 'stronger' | 'weaker' {
+  return trajectory < 50 ? 'stronger' : 'weaker';
+}
+
 /** A positive delta means the occupation became more obsolete. */
 export function deltaDirection(delta: number | null | undefined): DeltaDirection {
   if (delta == null || !Number.isFinite(delta) || delta === 0) return 'flat';

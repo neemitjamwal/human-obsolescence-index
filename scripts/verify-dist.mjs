@@ -192,7 +192,38 @@ for (const o of data.occupations) {
 }
 const interpreters = readDist('occupations/interpreters-and-translators/index.html') ?? '';
 if (!/data-growth-note[\s\S]*?class="change-growth"[^>]*>\+2%</.test(interpreters)) failures.push('interpreters page does not render its +2% BLS projection in the growth note');
-
+// OBS is a weighted blend, so a high score does not imply weak growth: notes must follow each page's Trajectory.
+const GROWTH_OVERCLAIMS = [
+  /trails most other occupations/i,
+  /near the bottom on projected growth/i,
+  /not outgrowing the field/i,
+  /high (OBS|score)[^.]*(means|implies|guarantees)[^.]*(weak|slow|low|bottom)[^.]*growth/i,
+];
+const growthBranches = { stronger: 0, weaker: 0 };
+for (const o of data.occupations) {
+  const html = readDist(`occupations/${o.slug}/index.html`);
+  if (!html) continue;
+  const text = plain(html);
+  for (const re of GROWTH_OVERCLAIMS) if (re.test(text)) failures.push(`occupations/${o.slug}/ claims a high OBS implies weak growth (${re})`);
+  const m = /data-growth-note="(\w+)"/.exec(html);
+  if (!m) continue;
+  const expected = o.scores.trajectory.value < 50 ? 'stronger' : 'weaker';
+  if (m[1] !== expected) failures.push(`occupations/${o.slug}/ growth note says ${m[1]}, Trajectory ${o.scores.trajectory.value} implies ${expected}`);
+  const phrase = expected === 'stronger' ? 'stronger projected growth than most other occupations' : 'positive but weaker than most other occupations';
+  if (!text.includes(phrase)) failures.push(`occupations/${o.slug}/ growth note lacks "${phrase}"`);
+  growthBranches[expected] += 1;
+}
+if (!growthBranches.stronger || !growthBranches.weaker) failures.push(`growth notes cover only one branch (${JSON.stringify(growthBranches)})`);
+const dataSciPage = plain(readDist('occupations/data-scientists/index.html') ?? '');
+if (!dataSciPage.includes('stronger projected growth than most other occupations') || !dataSciPage.includes('+34.6%') || /trails most|weaker than most/.test(dataSciPage)) {
+  failures.push('data scientists page does not describe its above-median projected growth');
+}
+const interpPage = plain(interpreters);
+if (!interpPage.includes('positive but weaker than most other occupations')) failures.push('interpreters page does not use the weaker-growth wording');
+for (const re of GROWTH_OVERCLAIMS) if (re.test(methodologyPlain)) failures.push(`methodology claims a high OBS implies weak growth (${re})`);
+if (!/weighted blend/.test(methodologyPlain) || !methodology.includes('data-exposure-led-example') || !/data-scientists/.test(methodology)) {
+  failures.push('methodology does not explain OBS as a weighted blend with the data scientists example');
+}
 for (const s of manifest.sources) {
   if (!methodology.includes(`id="src-${s.id}"`)) failures.push(`methodology does not list source ${s.id}`);
 }
@@ -309,7 +340,7 @@ console.log(
   `verify-dist OK: ${htmlFiles.length} HTML page(s), nav targets present, ${cssFiles.length} CSS bundle(s) ` +
     `(${(cssBytes / 1024).toFixed(1)} KB) with all Exchange tokens, ticker + ledger on home, no localhost URLs; ` +
     `${occupationPages} occupation pages with all components (${citationLinks} citation links, all resolving to sources.json), ` +
-    `${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes, stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
+    `${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes (${growthBranches.stronger} stronger-growth, ${growthBranches.weaker} weaker-growth), stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
     `${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
     `${textFiles.length} text files free of localhost/127.0.0.1`,
 );

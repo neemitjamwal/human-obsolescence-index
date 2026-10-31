@@ -16,7 +16,7 @@ import {
   formatSignedPercent,
   formatUsd,
 } from '../../lib/format';
-import { BAND_LABELS, scoreBand } from '../../lib/ledger';
+import { BAND_LABELS, relativeGrowth, scoreBand } from '../../lib/ledger';
 import { occupationDescription, occupationImageAlt, ogImagePath } from '../../lib/seo';
 
 export function getStaticPaths() {
@@ -37,6 +37,7 @@ const change = o.projectedChange.percent.value;
 const tone = changeTone(change);
 const sourceIds = occupationSourceIds(o);
 const growingHighBand = (band === 'severe' || band === 'elevated') && change != null && change > 0;
+const growth = relativeGrowth(o.scores.trajectory.value ?? 100);
 const SENTIMENT: Record<string, string> = {
   severe: 'Market sentiment: sell. The machines have read the job description.',
   elevated: 'Market sentiment: volatile. Big parts of this job are already on the auction block.',
@@ -80,14 +81,25 @@ const description = occupationDescription(o);
           {band && <p class="prose-block mt-4">{SENTIMENT[band]}</p>}
           {
             growingHighBand && (
-              <p class="prose-block mt-3 text-sm" data-growth-note>
+              <p class="prose-block mt-3 text-sm" data-growth-note={growth}>
                 Read the fine print: BLS still projects this occupation to grow{' '}
-                <strong class="change-growth">{formatSignedPercent(change)}</strong> from 2025 to 2035. The high score comes from
-                heavy AI exposure and growth that trails most other occupations, not from a shrinking job.
+                <strong class="change-growth">{formatSignedPercent(change)}</strong> from 2025 to 2035.
+                {growth === 'stronger' ? (
+                  <>
+                    {' '}That is stronger projected growth than most other occupations (Trajectory{' '}
+                    {formatScore(o.scores.trajectory.value)} of 100). The high score comes mainly from task exposure
+                    (Exposure {formatScore(o.scores.exposure.value)} of 100), not from weak growth or a shrinking job.
+                  </>
+                ) : (
+                  <>
+                    {' '}That growth is positive but weaker than most other occupations (Trajectory{' '}
+                    {formatScore(o.scores.trajectory.value)} of 100). The high score combines task exposure (Exposure{' '}
+                    {formatScore(o.scores.exposure.value)} of 100) with that weaker relative growth, not a shrinking job.
+                  </>
+                )}
               </p>
             )
-          }
-          <p class="term-label mt-3 text-dim">
+          }          <p class="term-label mt-3 text-dim">
             Computed by the Human Obsolescence Index · <CiteLink id="hoi-composite" local />
           </p>
         </div>

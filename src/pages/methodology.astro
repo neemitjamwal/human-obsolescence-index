@@ -4,6 +4,7 @@ import CiteLink from '../components/CiteLink.astro';
 import ReceiptList from '../components/ReceiptList.astro';
 import { META, OCCUPATIONS, SOURCES, UNIVERSE, leaderboard, occupationPath, sourceById } from '../lib/data';
 import { formatPercentile, formatScore, formatSignedPercent } from '../lib/format';
+import { BAND_LABELS, relativeGrowth, scoreBand } from '../lib/ledger';
 import { BLS_LIMITS, MICROSOFT_WARNING, STANFORD_CANARIES, STANFORD_CANARIES_PAPER } from '../data/references';
 
 const f = META.formula;
@@ -15,6 +16,11 @@ const blsSource = sourceById('bls-ai-exposure');
 const msft = sourceById('msft-ai-applicability');
 const missingMsft = UNIVERSE.filter((x) => x.msft == null).sort((a, b) => a.title.localeCompare(b.title));
 const interp = OCCUPATIONS.find((x) => x.slug === 'interpreters-and-translators');
+const dataSci = OCCUPATIONS.find((x) => x.slug === 'data-scientists');
+const growingHigh = OCCUPATIONS.filter(
+  (x) => (x.scores.obs.value ?? 0) >= 50 && (x.projectedChange.percent.value ?? 0) > 0 && x.scores.trajectory.value != null,
+);
+const growingHighStronger = growingHigh.filter((x) => relativeGrowth(x.scores.trajectory.value!) === 'stronger').length;
 const severe = UNIVERSE.filter((x) => x.obs != null && x.obs >= 75);
 const severeTotal = severe.length;
 const severeGrowing = severe.filter((x) => (x.changePercent ?? 0) > 0).length;
@@ -51,24 +57,43 @@ const coverageRows: [string, number, string][] = [
           the work ({pctWord(w.eloundou)}). Each is converted to a percentile rank first, so neither scale dominates.
         </p>
         <p data-high-score-meaning>
-          A high score means a job ranks near the top on AI exposure and near the bottom on projected growth, relative to
-          the other {u.size} occupations BLS projects. It is a ranking, not a forecast. It does not mean the job is
-          shrinking, it does not mean hiring is falling, and it is not a prediction that the job disappears. The index has
-          no hiring data at all.
+          The OBS is a weighted blend: {pctWord(w.exposure)} Exposure plus {pctWord(w.trajectory)} Trajectory. Either part
+          can drive the score. An occupation can land in the Severe or Elevated band because AI can reach almost all of its
+          work, even when BLS projects it to grow faster than most occupations. It can also land there with more modest
+          exposure and weak projected growth. The score is a ranking against the other {u.size} occupations BLS projects,
+          not a forecast. It does not mean the job is shrinking, it does not mean hiring is falling, and it is not a
+          prediction that the job disappears. The index has no hiring data at all.
         </p>
         {
-          interp && (
-            <p data-growth-counterexample>
-              Exhibit A: <a class="underline" href={occupationPath(interp.slug)}>{interp.title.toLowerCase()}</a> score OBS
-              {' '}{interp.scores.obs.value} (Severe) while BLS projects their employment to grow
-              {' '}{formatSignedPercent(interp.projectedChange.percent.value)} from 2025 to 2035 (<CiteLink id="bls-ep" />).
-              {' '}{severeGrowing} of the {severeTotal} Severe occupations in the universe are projected to grow. A high score
-              says the machines can reach the work and the job is not outgrowing the field. It does not say the job is
-              losing workers. Several of our inputs make the same point about themselves, and we quote them below.
+          dataSci && (
+            <p data-exposure-led-example>
+              Exhibit A: <a class="underline" href={occupationPath(dataSci.slug)}>{dataSci.title.toLowerCase()}</a> score
+              OBS {dataSci.scores.obs.value} ({BAND_LABELS[scoreBand(dataSci.scores.obs.value!)]}) while BLS projects their
+              employment to grow {formatSignedPercent(dataSci.projectedChange.percent.value)} from 2025 to 2035
+              (<CiteLink id="bls-ep" />), faster than most occupations. Exposure is {formatScore(dataSci.scores.exposure.value)}
+              {' '}and Trajectory is {formatScore(dataSci.scores.trajectory.value)}, so OBS = round({w.exposure} ×
+              {' '}{formatScore(dataSci.scores.exposure.value)} + {w.trajectory} × {formatScore(dataSci.scores.trajectory.value)})
+              {' '}= {dataSci.scores.obs.value}. Exposure supplies
+              {' '}{formatScore(w.exposure * (dataSci.scores.exposure.value ?? 0), 1)} of those points. Of the
+              {' '}{growingHigh.length} Severe or Elevated occupations we track that BLS projects to grow, {growingHighStronger}
+              {' '}have stronger projected growth than most occupations.
             </p>
           )
         }
-      </div>
+        {
+          interp && (
+            <p data-growth-counterexample>
+              Exhibit B: <a class="underline" href={occupationPath(interp.slug)}>{interp.title.toLowerCase()}</a> score OBS
+              {' '}{interp.scores.obs.value} (Severe) while BLS projects their employment to grow
+              {' '}{formatSignedPercent(interp.projectedChange.percent.value)} from 2025 to 2035 (<CiteLink id="bls-ep" />).
+              {' '}That growth is weaker than most occupations (Trajectory {formatScore(interp.scores.trajectory.value)}), so
+              both parts push this score up. {severeGrowing} of the {severeTotal} Severe occupations in the universe are
+              projected to grow. A high score says the machines can reach much of the work; on its own it does not tell you
+              how fast the job is growing, and it does not say the job is losing workers. Several of our inputs make the same
+              point about themselves, and we quote them below.
+            </p>
+          )
+        }      </div>
     </section>
 
     <section aria-labelledby="formula-title" class="mt-10" id="formula">
