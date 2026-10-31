@@ -1,14 +1,86 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { META, leaderboard, sourceById } from '../lib/data';
+import { quotableStats } from '../lib/press';
+import { sourceShort } from '../data/references';
 
-// TODO(index-site-pages): replace this placeholder with the full Press page.
+const stats = quotableStats();
+const board = leaderboard();
+const year = META.dataAsOf.slice(0, 4);
+const citation = `Human Obsolescence Index, ${META.edition} edition (data as of ${META.dataAsOf}). https://humanobsolescenceindex.com/`;
+const sourceHref = (id: string) => sourceById(id).url;
+const PACK = [
+  { href: '/stat-pack/hoi-top50.csv', name: 'hoi-top50.csv', what: `The top 50 leaderboard occupations: rank, SOC code, OBS, Exposure, Trajectory, both exposure percentiles, BLS projected change, BLS category, 2025 employment, median wage and page URL.` },
+  { href: '/stat-pack/sources.json', name: 'sources.json', what: 'The source manifest: URL, retrieval date, SHA-256 hash, byte size, license and citation for every input file.' },
+  { href: '/stat-pack/README.txt', name: 'README.txt', what: 'What the files are, the one-line caveat and the attribution text.' },
+];
 ---
 
-<BaseLayout title="Press" description="Press kit: how to cite the Human Obsolescence Index and download the source manifest.">
-  <section class="mx-auto max-w-3xl px-4 py-12 md:px-6">
-    <p class="term-label text-phosphor">Press kit</p>
+<BaseLayout title="Press" description={`Press kit for the ${META.edition} Human Obsolescence Index: how to cite it, quotable stats with sources, and a downloadable stat pack.`}>
+  <article class="mx-auto max-w-3xl px-4 py-12 md:px-6">
+    <p class="term-label text-phosphor">Press kit · {META.edition}</p>
     <h1 class="mt-3 font-display text-3xl font-extrabold uppercase tracking-tight">Press</h1>
-    <p class="placeholder-flag term-label mt-6 px-3 py-2" data-placeholder>Under construction · This page ships with the site pages release</p>
-    <p class="prose-block mt-6 text-dim">How to cite the index, quotable figures with their sources, and the downloadable stat pack will live here.</p>
-  </section>
+    <p class="prose-block mt-4">
+      The Human Obsolescence Index ranks {board.length} U.S. occupations by a composite OBS score: how exposed their work is
+      to AI, and whether BLS projects them to shrink from 2025 to 2035. It is built only from public data, updated
+      quarterly, and every figure traces to a named source file with a SHA-256 hash.
+    </p>
+
+    <section class="mt-10" aria-labelledby="cite-title" id="how-to-cite">
+      <h2 id="cite-title" class="font-display text-xl font-bold uppercase">How to cite</h2>
+      <p class="prose-block mt-2 text-dim">Suggested citation:</p>
+      <p class="panel mt-2 p-4 font-mono text-sm break-words" data-citation>{citation}</p>
+      <ul class="prose-block mt-4 list-disc space-y-2 pl-5">
+        <li>Call the OBS score "the Human Obsolescence Index's composite score". It is ours, not a government number.</li>
+        <li>Attribute the "Very high / High / Moderate / Low" category to the U.S. Bureau of Labor Statistics. It is BLS's label.</li>
+        <li>Please do not write that a job "will be replaced" because of a high score. Exposure measures what AI can do to an occupation's tasks, not whether the job disappears.</li>
+        <li>Link the occupation page you quote. Each one carries its full receipts.</li>
+      </ul>
+    </section>
+
+    <section class="mt-10" aria-labelledby="stats-title" id="stats">
+      <h2 id="stats-title" class="font-display text-xl font-bold uppercase">Quotable stats</h2>
+      <ul class="mt-4 space-y-3" data-quotable-stats>
+        {
+          stats.map((s) => (
+            <li class="panel p-4" data-stat={s.id}>
+              <p class="prose-block">{s.text}</p>
+              <p class="term-label mt-2 text-dim">
+                Source:{' '}
+                {s.sourceIds.map((id, i) => (
+                  <>
+                    {i > 0 && ' · '}
+                    <a class="cite-link" href={sourceHref(id)} data-stat-source={id}>{sourceShort(id)}</a>
+                  </>
+                ))}
+                {s.href && <> · <a class="cite-link" href={s.href}>see the page</a></>}
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="mt-10" aria-labelledby="pack-title" id="stat-pack">
+      <h2 id="pack-title" class="font-display text-xl font-bold uppercase">Download the stat pack</h2>
+      <p class="prose-block mt-2 text-dim">
+        Free to reuse with attribution. Our composite scores are CC BY 4.0; upstream licenses apply to the inputs (see
+        {' '}<a class="underline" href="/about/#licensing">licensing</a>).
+      </p>
+      <ul class="mt-4 space-y-3" data-stat-pack>
+        {
+          PACK.map((p) => (
+            <li class="panel flex flex-col gap-2 p-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p class="font-display font-bold">{p.name}</p>
+                <p class="mt-1 text-sm text-dim">{p.what}</p>
+              </div>
+              <a class="filter-chip term-label shrink-0 self-start no-underline" href={p.href} download={p.name}>Download {p.name}</a>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="term-label mt-4 text-dim">© {year} Human Obsolescence Index · Methodology: <a class="underline" href="/methodology/">/methodology/</a></p>
+    </section>
+  </article>
 </BaseLayout>

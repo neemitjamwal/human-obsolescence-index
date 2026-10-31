@@ -1,0 +1,24 @@
+---
+import { MUSEUM_PRECEDENTS } from '../data/precedents';
+
+interface Props {
+  soc: string;
+}
+
+// Slot for the Museum of Extinct Jobs cross-link. The mapping in src/data/precedents.ts is filled by the
+// launch milestone; until then the slot renders as an empty, invisible marker.
+const precedent = MUSEUM_PRECEDENTS[Astro.props.soc];
+---
+
+<div data-museum-precedent-slot={Astro.props.soc}>
+  {
+    precedent && (
+      <aside class="panel mt-10 p-5" aria-labelledby="precedent-title">
+        <h2 id="precedent-title" class="term-label text-amber">Historical precedent</h2>
+        <p class="prose-block mt-2">
+          {precedent.line} <a class="underline" href={precedent.url}>{precedent.exhibit} at the Museum of Extinct Jobs</a>
+        </p>
+      </aside>
+    )
+  }
+</div>

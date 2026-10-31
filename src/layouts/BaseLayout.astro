@@ -42,7 +42,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       class="term-label sr-only bg-phosphor px-4 py-2 text-slate focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50"
     >Skip to the trading floor</a>
     <SiteHeader />
-    <main id="main" class="flex-1">
+    <main id="main" class="flex-1 focus:outline-none" tabindex="-1">
       <slot />
     </main>
     <SiteFooter />

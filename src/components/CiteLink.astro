@@ -1,0 +1,16 @@
+---
+import { sourceById } from '../lib/data';
+import { sourceShort } from '../data/references';
+
+interface Props {
+  id: string;
+  /** Link to the on-page receipt anchor instead of the methodology source list. */
+  local?: boolean;
+}
+
+const { id, local = false } = Astro.props;
+const source = sourceById(id);
+const href = local ? `#src-${id}` : `/methodology/#src-${id}`;
+---
+
+<a class="cite-link" href={href} data-cite={source.id}>{sourceShort(source.id)}</a>

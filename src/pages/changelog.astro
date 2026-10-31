@@ -1,0 +1,78 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { META, SOURCES, leaderboard, nextEdition, occupationPath } from '../lib/data';
+import { formatJobs, formatSignedPercent } from '../lib/format';
+import { steepestDecliners } from '../lib/press';
+import CiteLink from '../components/CiteLink.astro';
+
+const board = leaderboard();
+const top = board.slice(0, 3);
+const falling = steepestDecliners(3);
+const biggest = [...board].sort((a, b) => (b.employment.value ?? 0) - (a.employment.value ?? 0)).slice(0, 3);
+const inputs = SOURCES.filter((s) => s.sha256);
+const next = nextEdition(META.edition);
+---
+
+<BaseLayout title="Changelog" description={`Quarterly release log for the Human Obsolescence Index. Current edition: ${META.edition}, released ${META.dataAsOf}.`}>
+  <article class="mx-auto max-w-3xl px-4 py-12 md:px-6">
+    <p class="term-label text-phosphor">Quarterly filings</p>
+    <h1 class="mt-3 font-display text-3xl font-extrabold uppercase tracking-tight">Changelog</h1>
+    <p class="prose-block mt-4 text-dim">
+      The index is re-run every quarter from pinned, dated input files. Each release is logged here with what went in and
+      what moved.
+    </p>
+
+    <section class="panel mt-8 p-5" aria-labelledby={`release-${META.edition}`} data-release={META.edition}>
+      <p class="term-label text-amber">Current release</p>
+      <h2 id={`release-${META.edition}`} class="mt-1 font-display text-2xl font-bold uppercase">{META.edition} · First edition</h2>
+      <p class="term-label mt-1 text-dim">Released <time datetime={META.dataAsOf} data-release-date>{META.dataAsOf}</time></p>
+
+      <h3 class="term-label mt-6 text-paper">What changed</h3>
+      <p class="prose-block mt-2">
+        Launch. {META.universe.obsScored} of {META.universe.size} BLS occupations scored, {board.length} on the ranked board,
+        {' '}{META.selectedCount} with full pages. There is no earlier edition, so there are no score deltas yet: the
+        leaderboard's Δ column shows BLS's projected employment change instead. Score movement appears from {next}.
+      </p>
+
+      <h3 class="term-label mt-6 text-paper">Notable movers</h3>
+      <ul class="prose-block mt-2 list-disc space-y-1 pl-5" data-movers>
+        <li>
+          Opening at the top:{' '}
+          {top.map((o, i) => <>{i > 0 && ', '}<a class="underline" href={occupationPath(o.slug)}>{o.title}</a> (OBS {o.scores.obs.value})</>)}.
+        </li>
+        <li>
+          Steepest BLS projected declines, 2025–35:{' '}
+          {falling.map((o, i) => <>{i > 0 && ', '}<a class="underline" href={occupationPath(o.slug)}>{o.title}</a> ({formatSignedPercent(o.projectedChange.percent.value)})</>)}.
+        </li>
+        <li>
+          Largest workforces on the board:{' '}
+          {biggest.map((o, i) => <>{i > 0 && ', '}<a class="underline" href={occupationPath(o.slug)}>{o.title}</a> ({formatJobs(o.employment.value)} jobs in 2025)</>)}.
+        </li>
+      </ul>
+      <p class="term-label mt-2 text-dim">Sources · <CiteLink id="hoi-composite" /> · <CiteLink id="bls-ep" /></p>
+
+      <h3 class="term-label mt-6 text-paper">Inputs</h3>
+      <div class="table-scroll mt-2" role="region" aria-label={`Input files for ${META.edition}`} tabindex="0">
+        <table class="data-table" data-inputs>
+          <thead><tr><th scope="col">Input</th><th scope="col">File</th><th scope="col">Retrieved</th><th scope="col">SHA-256 (first 12)</th></tr></thead>
+          <tbody>
+            {inputs.map((s) => (
+              <tr>
+                <th scope="row"><a class="underline" href={`/methodology/#src-${s.id}`}>{s.name}</a></th>
+                <td>{s.file}</td>
+                <td class="num">{s.retrievedAt.slice(0, 10)}</td>
+                <td class="num"><code>{s.sha256!.slice(0, 12)}</code></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="term-label mt-6 text-paper">Next release</h3>
+      <p class="prose-block mt-2" data-next-release>
+        Quarterly. The next edition, {next}, re-downloads every input and logs any changed file hashes here. Expected input
+        bumps: OEWS May 2026 estimates in spring 2027 and BLS Employment Projections 2026–36 in late August 2027.
+      </p>
+    </section>
+  </article>
+</BaseLayout>

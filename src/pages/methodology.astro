@@ -1,14 +1,203 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import CiteLink from '../components/CiteLink.astro';
+import ReceiptList from '../components/ReceiptList.astro';
+import { META, SOURCES, UNIVERSE, leaderboard, occupationPath, sourceById } from '../lib/data';
+import { formatPercentile, formatScore, formatSignedPercent } from '../lib/format';
+import { BLS_LIMITS, MICROSOFT_WARNING, STANFORD_CANARIES, STANFORD_CANARIES_PAPER } from '../data/references';
 
-// TODO(index-site-pages): replace this placeholder with the full Methodology page.
+const f = META.formula;
+const w = f.weights;
+const u = META.universe;
+const lb = META.leaderboard;
+const ex = leaderboard()[0];
+const blsSource = sourceById('bls-ai-exposure');
+const msft = sourceById('msft-ai-applicability');
+const missingMsft = UNIVERSE.filter((x) => x.msft == null).sort((a, b) => a.title.localeCompare(b.title));
+const pctWord = (n: number) => `${Math.round(n * 100)}%`;
+const coverageRows: [string, number, string][] = [
+  ['Occupations in the universe', u.size, u.source],
+  ['With a Microsoft AI applicability score', u.microsoftCovered, 'msft-ai-applicability'],
+  ['Without a Microsoft score', u.microsoftMissing, 'msft-ai-applicability'],
+  ['With an Eloundou β rating (via crosswalk)', u.eloundouCovered, 'openai-gpts-are-gpts'],
+  ['With both exposure measures', u.bothExposureComponents, 'hoi-composite'],
+  ['With an official BLS AI exposure category', u.blsCategoryCovered, 'bls-ai-exposure'],
+  ['With OEWS May 2025 employment and wages', u.oesCovered, 'bls-oews'],
+  ['Given an OBS score', u.obsScored, 'hoi-composite'],
+];
 ---
 
-<BaseLayout title="Methodology" description="How the OBS score is built: sources, weights, coverage and limits.">
-  <section class="mx-auto max-w-3xl px-4 py-12 md:px-6">
-    <p class="term-label text-phosphor">Prospectus</p>
+<BaseLayout title="Methodology" description={`How the OBS score is built: ${pctWord(w.exposure)} AI exposure, ${pctWord(w.trajectory)} BLS projected trajectory, with coverage disclosure, BLS's own limits and every source.`}>
+  <article class="mx-auto max-w-3xl px-4 py-12 md:px-6">
+    <p class="term-label text-phosphor">Prospectus · {META.edition} edition · Data as of {META.dataAsOf}</p>
     <h1 class="mt-3 font-display text-3xl font-extrabold uppercase tracking-tight">Methodology</h1>
-    <p class="placeholder-flag term-label mt-6 px-3 py-2" data-placeholder>Under construction · This page ships with the site pages release</p>
-    <p class="prose-block mt-6 text-dim">The full formula, weights, coverage disclosure and the official interpretation limits will be published here, each with its source.</p>
-  </section>
+
+    <section aria-labelledby="summary-title" class="mt-8">
+      <h2 id="summary-title" class="font-display text-xl font-bold uppercase">In plain language</h2>
+      <div class="prose-block mt-3 space-y-3">
+        <p>
+          The OBS score (0 to 100) blends two questions. <strong>How much of this job's work can AI touch?</strong> That is
+          Exposure, {pctWord(w.exposure)} of the score. <strong>Does BLS expect this job to shrink?</strong> That is
+          Trajectory, {pctWord(w.trajectory)} of the score.
+        </p>
+        <p>
+          Exposure averages two independent measures with equal weight: Microsoft's measure of where people actually use AI
+          at work ({pctWord(w.microsoft)}) and Eloundou et al.'s rating of where large language models could do or speed up
+          the work ({pctWord(w.eloundou)}). Each is converted to a percentile rank first, so neither scale dominates.
+        </p>
+        <p>
+          A high score means a job is both exposed and projected to shrink. It is not a prediction that the job disappears.
+          Several of our inputs say so themselves, and we quote them below.
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="formula-title" class="mt-10" id="formula">
+      <h2 id="formula-title" class="font-display text-xl font-bold uppercase">The formula</h2>
+      <ol class="mt-4 space-y-3" data-formula>
+        <li class="panel p-4">
+          <p class="term-label text-dim">Step 1 · Percentiles</p>
+          <p class="prose-block mt-1">{f.percentile}</p>
+        </li>
+        <li class="panel p-4">
+          <p class="term-label text-dim">Step 2 · Exposure ({pctWord(w.microsoft)} Microsoft + {pctWord(w.eloundou)} Eloundou)</p>
+          <p class="mt-1 font-display text-sm font-bold">{f.exposure}</p>
+          <p class="prose-block mt-2 text-dim">
+            P_MSFT is the percentile of Microsoft's AI applicability score (<CiteLink id="msft-ai-applicability" />). P_ELD is
+            the percentile of the Eloundou et al. β rating, dv_rating_beta (<CiteLink id="openai-gpts-are-gpts" />), mapped to
+            SOC codes with the <CiteLink id="bls-crosswalk" />. {f.eloundouAggregation}
+          </p>
+        </li>
+        <li class="panel p-4">
+          <p class="term-label text-dim">Step 3 · Trajectory</p>
+          <p class="mt-1 font-display text-sm font-bold">{f.trajectory}</p>
+          <p class="prose-block mt-2 text-dim">
+            The input is BLS's projected employment change, 2025–35 (<CiteLink id="bls-ep" />). The sign is flipped so that
+            shrinking occupations rank high. An occupation BLS expects to grow gets a low Trajectory even if it is highly
+            exposed.
+          </p>
+        </li>
+        <li class="panel p-4">
+          <p class="term-label text-dim">Step 4 · OBS ({pctWord(w.exposure)} Exposure + {pctWord(w.trajectory)} Trajectory)</p>
+          <p class="mt-1 font-display text-sm font-bold">{f.obs}</p>
+          <p class="prose-block mt-2 text-dim">{f.rounding}</p>
+        </li>
+      </ol>
+
+      <div class="panel mt-4 p-4" data-worked-example>
+        <p class="term-label text-dim">Worked example · <a class="underline" href={occupationPath(ex.slug)}>{ex.title}</a></p>
+        <p class="mt-2 break-words font-display text-sm leading-relaxed">
+          P_MSFT {formatPercentile(ex.components.microsoft.percentile)} and P_ELD {formatPercentile(ex.components.eloundou.percentile)}
+          (percentiles out of 100) → Exposure {formatScore(ex.scores.exposure.value)}. BLS change
+          {' '}{formatSignedPercent(ex.components.employmentChange.raw)} → Trajectory {formatScore(ex.scores.trajectory.value)}.
+          OBS = round({w.exposure} × {formatScore(ex.scores.exposure.value)} + {w.trajectory} × {formatScore(ex.scores.trajectory.value)}) = {ex.scores.obs.value}.
+        </p>
+      </div>
+
+      <h3 class="term-label mt-6 text-paper">Display bands (ours, not BLS's)</h3>
+      <p class="prose-block mt-2 text-dim">
+        OBS 75 and up is Severe, 50–74 Elevated, 25–49 Moderate, under 25 Low. These bands only color our number. The BLS
+        category shown beside every score is BLS's own four-band label, published separately. It is not an input to the OBS.
+      </p>
+
+      <h3 class="term-label mt-6 text-paper">Who makes the board</h3>
+      <p class="prose-block mt-2 text-dim">
+        {lb.rule}: {lb.eligible} occupations qualify and the cutoff lands at OBS {lb.cutoffObs}. We also track, off the ranked
+        board, all {META.forcedInclusions.fastestDeclining.socs.length} occupations on BLS's fastest-declining list
+        (<CiteLink id="bls-ep" />) and {META.forcedInclusions.contrast.socs.length} low-scoring contrast occupations, so the
+        floor is not only bad news.
+      </p>
+    </section>
+
+    <section aria-labelledby="coverage-title" class="mt-10" id="coverage" data-coverage>
+      <h2 id="coverage-title" class="font-display text-xl font-bold uppercase">Coverage disclosure</h2>
+      <p class="prose-block mt-2">
+        Hiding gaps would be worse than a lower score. <strong data-msft-missing>{u.microsoftMissing}</strong> of the {u.size}
+        occupations BLS projects have no Microsoft AI applicability score. Microsoft also scores
+        {' '}{u.microsoftOutsideUniverse.length} SOC code{u.microsoftOutsideUniverse.length === 1 ? '' : 's'}
+        ({u.microsoftOutsideUniverse.join(', ')}) that BLS does not project, so {u.microsoftOutsideUniverse.length === 1 ? 'it cannot' : 'they cannot'} join.
+        An occupation with only one exposure measure uses that measure alone and is flagged on its page. An occupation with
+        neither gets no OBS and never appears on the board.
+      </p>
+      <div class="table-scroll mt-4" role="region" aria-label="Coverage by input" tabindex="0">
+        <table class="data-table">
+          <thead><tr><th scope="col">Measure</th><th scope="col" class="num">Occupations</th><th scope="col">Source</th></tr></thead>
+          <tbody>
+            {coverageRows.map(([label, n, src]) => (
+              <tr>
+                <th scope="row">{label}</th>
+                <td class="num">{n}</td>
+                <td>{src.includes(' ') ? src : <CiteLink id={src} local />}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <details class="panel mt-4 p-4">
+        <summary class="term-label cursor-pointer text-paper">The {missingMsft.length} occupations without a Microsoft score</summary>
+        <ul class="mt-3 columns-1 text-sm text-dim sm:columns-2">
+          {missingMsft.map((x) => <li>{x.title} ({x.soc})</li>)}
+        </ul>
+      </details>
+    </section>
+
+    <section aria-labelledby="limits-title" class="mt-10" id="limits" data-bls-limits>
+      <h2 id="limits-title" class="font-display text-xl font-bold uppercase">What BLS says its exposure data does not mean</h2>
+      <p class="prose-block mt-2 text-dim">Quoted verbatim from the BLS AI exposure workbook (<CiteLink id="bls-ai-exposure" local />):</p>
+      <blockquote class="quote-block mt-4" cite={blsSource.url} data-verbatim="bls-field-description">
+        <p>{BLS_LIMITS.fieldDescription}</p>
+      </blockquote>
+      <blockquote class="quote-block mt-4" cite={blsSource.url} data-verbatim="bls-table-note">
+        <p>{BLS_LIMITS.tableNote}</p>
+      </blockquote>
+      <p class="prose-block mt-3 text-dim">
+        BLS's full methodology and limitations: <a class="underline" href={blsSource.methodologyUrl}>{blsSource.methodologyUrl}</a>.
+        On wages, BLS adds: "{BLS_LIMITS.wageNote}"
+      </p>
+    </section>
+
+    <section aria-labelledby="msft-title" class="mt-10" id="microsoft-warning" data-microsoft-warning>
+      <h2 id="msft-title" class="font-display text-xl font-bold uppercase">Microsoft's out-of-scope warning</h2>
+      <p class="prose-block mt-2">
+        The Microsoft Research authors (Tomlinson, Jaffe, Wang, Counts and Suri) built their applicability score from how
+        people actually use Copilot at work. They warn that it
+        {' '}<q cite={msft.methodologyUrl}>{MICROSOFT_WARNING}</q>. We agree, which is why it is only half of Exposure and why
+        Exposure is only part of the OBS. <a class="underline" href={msft.methodologyUrl}>Read the paper (arXiv:2507.07935)</a>.
+      </p>
+    </section>
+
+    <section aria-labelledby="canaries-title" class="mt-10" id="reality-check" data-canaries>
+      <h2 id="canaries-title" class="font-display text-xl font-bold uppercase">Reality check: the canaries</h2>
+      <div class="prose-block mt-2 space-y-3">
+        <p>
+          Exposure scores are forecasts of what AI could touch. For what is actually happening, the best evidence we know of
+          is Stanford's "Canaries in the Coal Mine?" study by Brynjolfsson, Chandar and Chen (Stanford Digital Economy Lab), using ADP
+          payroll data. Its August 2026 update found <strong>no widespread displacement</strong> of workers overall.
+        </p>
+        <p>
+          But for 22- to 25-year-olds in the most AI-exposed occupations, the employment gap has widened to
+          {' '}<strong>19%</strong> (first reported as 13% in August 2025), with an 11% absolute decline for the most-exposed young
+          workers from November 2022 to June 2026. The mechanism is <strong>reduced hiring, not firings</strong>: the
+          entry-level door is narrowing, rather than workers being fired.
+        </p>
+        <p>
+          So read a high OBS as "fewer people will be let in", not "everyone gets walked out". We cite and link this study; we
+          do not re-host its data.
+        </p>
+      </div>
+      <ul class="mt-4 space-y-2 text-sm">
+        <li><a class="underline" href={STANFORD_CANARIES.url}>{STANFORD_CANARIES.publisher}, "{STANFORD_CANARIES.title}" ({STANFORD_CANARIES.date})</a></li>
+        <li><a class="underline" href={STANFORD_CANARIES_PAPER.url}>{STANFORD_CANARIES_PAPER.publisher}, "{STANFORD_CANARIES_PAPER.title}" ({STANFORD_CANARIES_PAPER.date})</a></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="sources-title" class="mt-12" id="sources">
+      <h2 id="sources-title" class="font-display text-xl font-bold uppercase">Sources</h2>
+      <p class="prose-block mt-2 text-dim">
+        Every input, with the exact file, retrieval date, SHA-256 hash and license. The same manifest is downloadable as
+        {' '}<a class="underline" href="/stat-pack/sources.json">sources.json</a>.
+      </p>
+      <div class="mt-4" data-receipts><ReceiptList ids={SOURCES.map((s) => s.id)} /></div>
+    </section>
+  </article>
 </BaseLayout>

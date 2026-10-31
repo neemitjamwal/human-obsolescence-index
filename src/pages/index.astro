@@ -3,43 +3,83 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import TickerStrip from '../components/TickerStrip.astro';
 import Ledger from '../components/Ledger.astro';
 import LedgerRow from '../components/LedgerRow.astro';
-import type { BlsCategory } from '../lib/ledger';
+import CiteLink from '../components/CiteLink.astro';
+import { alsoTracked, leaderboard, META, occupationPath, type Occupation } from '../lib/data';
+import { tickerEntries } from '../lib/press';
+import { BLS_CATEGORIES } from '../lib/ledger';
 
-// TODO(index-site-pages): replace with the ranked top ~120 from src/data/occupations.json.
-// These rows only exercise the ledger design; they are labeled as specimens on the page and carry no real data.
-const SPECIMENS: { occupation: string; obs: number; delta: number | null; category: BlsCategory | null }[] = [
-  { occupation: 'Specimen row · severe band', obs: 88, delta: 4, category: 'Very high' },
-  { occupation: 'Specimen row · elevated band', obs: 63, delta: -2, category: 'High' },
-  { occupation: 'Specimen row · moderate band', obs: 37, delta: 0, category: 'Moderate' },
-  { occupation: 'Specimen row · low band', obs: 12, delta: null, category: 'Low' },
-];
+const board = leaderboard();
+const tracked = alsoTracked();
+const u = META.universe;
+const filters = ['All', ...BLS_CATEGORIES.filter((c) => board.some((o) => o.blsCategory.value === c))];
+const rowProps = (o: Occupation) => ({
+  occupation: o.title,
+  obs: o.scores.obs.value ?? 0,
+  change: o.projectedChange.percent.value,
+  category: o.blsCategory.value,
+  href: occupationPath(o.slug),
+  exposure: o.scores.exposure.value,
+  trajectory: o.scores.trajectory.value,
+});
 ---
 
-<BaseLayout>
-  <TickerStrip />
+<BaseLayout
+  description={`The ${META.edition} Human Obsolescence Index: ${board.length} occupations ranked by AI exposure and BLS projected decline, every number with its source.`}
+>
+  <TickerStrip items={tickerEntries()} label="Market ticker: top OBS scores and steepest BLS projected declines" />
 
   <section class="mx-auto max-w-6xl px-4 pb-6 pt-10 md:px-6 md:pt-14" aria-labelledby="floor-title">
-    <p class="term-label text-phosphor">Exchange floor · Session open</p>
+    <p class="term-label text-phosphor">Exchange floor · {META.edition} session · Data as of {META.dataAsOf}</p>
     <h1 id="floor-title" class="blink-cursor mt-3 font-display text-3xl font-extrabold uppercase leading-tight tracking-tight md:text-5xl">
       Human Obsolescence Index
     </h1>
     <p class="prose-block mt-4 text-dim">
-      Occupations ranked like stocks, by how much of their work AI can already touch and where official projections say
-      they are heading. Every number will carry its receipt.
+      Occupations traded like stocks. We scored {u.obsScored} of the {u.size} occupations BLS projects, on how much of their
+      work AI can already touch and where BLS says their employment is heading. The {board.length} highest scores among
+      occupations with at least {META.leaderboard.minOesEmployment.toLocaleString('en-US')} workers make the board. Every
+      occupation page carries its receipts.
     </p>
-    <!-- TODO(index-site-pages): hero summary built only from figures in occupations.json (universe size, release date). -->
+    <dl class="mt-6 grid max-w-3xl grid-cols-2 gap-px border border-grid bg-grid text-sm sm:grid-cols-4">
+      <div class="bg-panel p-3"><dt class="term-label text-dim">Listed</dt><dd class="font-display text-2xl font-bold">{board.length}</dd></div>
+      <div class="bg-panel p-3"><dt class="term-label text-dim">Scored</dt><dd class="font-display text-2xl font-bold">{u.obsScored}</dd></div>
+      <div class="bg-panel p-3"><dt class="term-label text-dim">Board cutoff</dt><dd class="font-display text-2xl font-bold">OBS {META.leaderboard.cutoffObs}</dd></div>
+      <div class="bg-panel p-3"><dt class="term-label text-dim">Top score</dt><dd class="font-display text-2xl font-bold text-alert">{board[0].scores.obs.value}</dd></div>
+    </dl>
   </section>
 
   <section class="mx-auto max-w-6xl px-4 md:px-6" aria-labelledby="board-title">
     <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
       <h2 id="board-title" class="font-display text-xl font-bold uppercase tracking-wide">Leaderboard</h2>
-      <!-- TODO(index-site-pages): score-band filter / sort controls. -->
+      <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter the leaderboard by official BLS category" data-board-filters>
+        <span class="term-label text-dim">BLS category:</span>
+        {
+          filters.map((f) => (
+            <button type="button" class="filter-chip term-label" data-filter={f} aria-pressed={f === 'All' ? 'true' : 'false'}>
+              {f}
+            </button>
+          ))
+        }
+      </div>
     </div>
-    <p class="placeholder-flag term-label mb-4 px-3 py-2" data-placeholder>
-      Design specimens, not data · The ranked board loads once the data pipeline ships
+    <p class="mb-3 max-w-3xl text-sm text-dim">
+      OBS = our composite score (bar, 0–100). BLS Δ jobs = BLS projected employment change, 2025–35. BLS category =
+      the government's own exposure label, shown beside our number, not part of it.
+      Sources: <CiteLink id="hoi-composite" /> · <CiteLink id="bls-ep" /> · <CiteLink id="bls-ai-exposure" />.
     </p>
-    <Ledger caption="Specimen leaderboard rows (design preview, not data)">
-      {SPECIMENS.map((row, i) => <LedgerRow rank={i + 1} {...row} />)}
+    <p class="sr-only" aria-live="polite" data-filter-status></p>
+    <Ledger caption={`Leaderboard, ${board.length} occupations ranked by OBS score, highest first`} id="leaderboard">
+      {board.map((o) => <LedgerRow rank={o.leaderboardRank} {...rowProps(o)} />)}
+    </Ledger>
+  </section>
+
+  <section class="mx-auto mt-12 max-w-6xl px-4 md:px-6" aria-labelledby="tracked-title">
+    <h2 id="tracked-title" class="font-display text-xl font-bold uppercase tracking-wide">Also on the floor</h2>
+    <p class="prose-block mt-2 mb-4 text-dim">
+      Not ranked, but tracked: every occupation on BLS's fastest-declining list that missed the board, plus a few
+      low-scoring contrast picks such as registered nurses and electricians. A shrinking job is not always an AI story.
+    </p>
+    <Ledger caption={`${tracked.length} tracked occupations outside the ranked board, highest OBS first`}>
+      {tracked.map((o) => <LedgerRow rank={null} {...rowProps(o)} />)}
     </Ledger>
   </section>
 
@@ -47,10 +87,29 @@ const SPECIMENS: { occupation: string; obs: number; delta: number | null; catego
     <div class="panel border-l-4 border-l-amber p-5">
       <h2 id="disclaimer-title" class="term-label text-amber">Read before trading</h2>
       <p class="prose-block mt-2">
-        Exposure measures what AI can do to an occupation's tasks, not whether the job disappears.
-        <a href="/methodology/" class="underline">Read the methodology</a>.
+        Exposure measures what AI can do to an occupation's tasks, not whether the job disappears. No deltas yet: this is
+        the first edition, so the Δ column shows BLS's own projection. Score movement starts next quarter.
+        {' '}<a href="/methodology/" class="underline">Read the methodology</a> or the <a href="/changelog/" class="underline">changelog</a>.
       </p>
     </div>
-    <!-- TODO(index-site-pages): biggest risers/fallers and the quarterly changelog teaser. -->
   </section>
 </BaseLayout>
+
+<script>
+  const group = document.querySelector<HTMLElement>('[data-board-filters]');
+  const status = document.querySelector<HTMLElement>('[data-filter-status]');
+  const rows = Array.from(document.querySelectorAll<HTMLElement>('#leaderboard [data-ledger-row]'));
+  group?.addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-filter]');
+    if (!button) return;
+    const filter = button.dataset.filter;
+    group.querySelectorAll('button[data-filter]').forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+    let shown = 0;
+    for (const row of rows) {
+      const visible = filter === 'All' || row.dataset.category === filter;
+      row.parentElement!.hidden = !visible;
+      if (visible) shown += 1;
+    }
+    if (status) status.textContent = `Showing ${shown} of ${rows.length} occupations`;
+  });
+</script>

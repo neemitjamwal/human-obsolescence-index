@@ -1,9 +1,10 @@
 ---
 interface Props {
   caption: string;
+  id?: string;
 }
 
-const { caption } = Astro.props;
+const { caption, id } = Astro.props;
 ---
 
 <div class="ledger">
@@ -11,10 +12,10 @@ const { caption } = Astro.props;
     <span>Rank</span>
     <span>Occupation</span>
     <span>OBS score</span>
-    <span class="text-right">Δ</span>
+    <span class="text-right">BLS Δ jobs</span>
     <span>BLS category</span>
   </div>
-  <ol class="ledger-list" aria-label={caption}>
+  <ol class="ledger-list" aria-label={caption} id={id}>
     <slot />
   </ol>
 </div>

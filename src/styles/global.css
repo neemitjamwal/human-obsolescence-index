@@ -87,7 +87,7 @@
   .ledger-head,
   .ledger-row {
     display: grid;
-    grid-template-columns: 2.75rem minmax(0, 1fr) 3.5rem;
+    grid-template-columns: 2.75rem minmax(0, 1fr) 5.5rem;
     grid-template-areas:
       "rank name delta"
       "rank bar  bar"
@@ -132,13 +132,13 @@
   .ledger-rank { grid-area: rank; font-family: var(--font-display); color: var(--color-dim); font-variant-numeric: tabular-nums; }
   .ledger-name { grid-area: name; min-width: 0; font-weight: 500; overflow-wrap: anywhere; }
   .ledger-bar { grid-area: bar; }
-  .ledger-delta { grid-area: delta; justify-self: end; font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+  .ledger-delta { grid-area: delta; justify-self: end; font-family: var(--font-display); font-size: 0.875rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .ledger-chip { grid-area: chip; }
 
   @media (min-width: 48rem) {
     .ledger-head,
     .ledger-row {
-      grid-template-columns: 3rem minmax(0, 1fr) minmax(10rem, 16rem) 4.5rem 9rem;
+      grid-template-columns: 3rem minmax(0, 1fr) minmax(10rem, 16rem) 6rem 9rem;
       grid-template-areas: "rank name bar delta chip";
     }
 
@@ -183,6 +183,11 @@
   .delta-down { color: var(--color-phosphor); }
   .delta-flat { color: var(--color-dim); }
 
+  /* BLS projected employment change: shrinking = red, growing = green. */
+  .change-decline { color: var(--color-alert); }
+  .change-growth { color: var(--color-phosphor); }
+  .change-flat { color: var(--color-dim); }
+
   /* BLS official category chip: outlined to read as a label, not our score. */
   .category-chip {
     display: inline-flex;
@@ -203,6 +208,117 @@
   .category-moderate { color: var(--color-amber); }
   .category-low { color: #56d364; }
   .category-none { color: var(--color-dim); }
+
+  .filter-chip {
+    border: 1px solid var(--color-grid);
+    background: var(--color-panel);
+    color: var(--color-paper);
+    padding: 0.3rem 0.6rem;
+    font-size: 0.6875rem;
+    cursor: pointer;
+  }
+
+  .filter-chip:hover { border-color: var(--color-dim); }
+
+  .filter-chip[aria-pressed='true'] {
+    border-color: var(--color-phosphor);
+    color: var(--color-phosphor);
+  }
+
+  .cite-link {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--color-paper);
+    text-decoration: underline;
+    text-decoration-color: var(--color-amber);
+  }
+
+  .cite-link:hover { color: var(--color-amber); }
+
+  .receipt-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .receipt {
+    background: var(--color-panel);
+    border: 1px solid var(--color-grid);
+    border-left: 3px solid var(--color-amber);
+    padding: 1rem;
+    overflow-wrap: anywhere;
+  }
+
+  .receipt:target { border-color: var(--color-amber); }
+
+  .receipt-meta { display: grid; gap: 0.25rem; font-size: 0.6875rem; color: var(--color-dim); }
+  .receipt-meta > div { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 0.5rem; }
+  .receipt-meta dd { margin: 0; color: var(--color-paper); text-transform: none; letter-spacing: 0.02em; }
+
+  /* Data tables scroll inside their own focusable region, never the page. */
+  .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--color-grid);
+    background: var(--color-panel);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--color-grid);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .data-table thead th {
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-dim);
+    font-weight: 500;
+  }
+
+  .data-table tbody th { font-weight: 500; color: var(--color-paper); }
+  .data-table .num { text-align: right; white-space: nowrap; font-family: var(--font-display); }
+  .data-table tr.row-total th,
+  .data-table tr.row-total td { background: rgb(230 237 243 / 0.04); font-weight: 700; }
+
+  .stat-grid { display: grid; gap: 1px; background: var(--color-grid); border: 1px solid var(--color-grid); }
+  .stat-grid > div { background: var(--color-panel); padding: 0.85rem 1rem; }
+
+  @media (min-width: 40rem) {
+    .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (min-width: 64rem) {
+    .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+
+  .disclaimer {
+    border: 1px solid var(--color-amber);
+    border-left-width: 6px;
+    background: rgb(240 180 41 / 0.06);
+    padding: 1rem 1.25rem;
+  }
+
+  .quote-block {
+    border-left: 3px solid var(--color-phosphor);
+    padding: 0.5rem 0 0.5rem 1rem;
+    font-family: var(--font-prose);
+    font-size: 1.0625rem;
+    line-height: 1.7;
+  }
 
   .placeholder-flag {
     border: 1px dashed var(--color-amber);

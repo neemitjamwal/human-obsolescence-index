@@ -1,37 +1,25 @@
 ---
-import { deltaGlyph, type DeltaDirection } from '../lib/ledger';
-
-export type TickerItem = { label: string; value?: string; direction?: DeltaDirection };
+import type { TickerEntry } from '../lib/press';
 
 interface Props {
-  items?: TickerItem[];
+  items: TickerEntry[];
   label?: string;
 }
 
-// TODO(index-site-pages): replace these placeholders with real top movers from src/data/occupations.json.
-// Placeholder items deliberately carry no numbers: nothing is displayed until it traces to a source.
-const PLACEHOLDER_ITEMS: TickerItem[] = [
-  { label: 'HUMAN RESOURCES DEPRECIATING SINCE 1767', direction: 'up' },
-  { label: 'FEED PENDING · LEADERBOARD DATA NOT YET LOADED', direction: 'flat' },
-  { label: 'EXPOSURE ≠ JOB LOSS · READ THE METHODOLOGY', direction: 'flat' },
-  { label: 'QUARTERLY UPDATES FROM PUBLIC DATASETS', direction: 'down' },
-];
-
-const { items = PLACEHOLDER_ITEMS, label = 'Market ticker' } = Astro.props;
-const isPlaceholder = items === PLACEHOLDER_ITEMS;
-const colour = (d?: DeltaDirection) => (d === 'up' ? 'text-alert' : d === 'down' ? 'text-phosphor' : 'text-dim');
+const { items, label = 'Market ticker' } = Astro.props;
+const colour = (t: TickerEntry['tone']) => (t === 'alert' ? 'text-alert' : t === 'phosphor' ? 'text-phosphor' : 'text-dim');
 ---
 
-<section class="ticker" aria-label={label} data-ticker data-placeholder={isPlaceholder ? 'true' : undefined}>
+<section class="ticker" aria-label={label} data-ticker>
   <div class="ticker-track">
     {
       [false, true].map((duplicate) => (
         <ul class="ticker-list term-label" aria-hidden={duplicate ? 'true' : undefined}>
           {items.map((item) => (
             <li class="flex items-center gap-2">
-              <span class={colour(item.direction)} aria-hidden="true">{deltaGlyph(item.direction ?? 'flat')}</span>
+              <span class={colour(item.tone)} aria-hidden="true">{item.glyph}</span>
               <span class="text-paper">{item.label}</span>
-              {item.value && <span class={colour(item.direction)}>{item.value}</span>}
+              {item.value && <span class={colour(item.tone)}>{item.value}</span>}
             </li>
           ))}
         </ul>

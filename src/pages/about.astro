@@ -1,14 +1,75 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { META, SOURCES, leaderboard } from '../lib/data';
 
-// TODO(index-site-pages): replace this placeholder with the full About page.
+const board = leaderboard();
+const onet = SOURCES.find((s) => s.id === 'onet-31')!;
+const CREDITS = [
+  { id: 'bls', who: 'U.S. Bureau of Labor Statistics', what: 'Employment Projections 2025–35, AI exposure categories, OEWS May 2025 wages and employment, and the O*NET–SOC crosswalk.', license: 'U.S. public domain (17 U.S.C. § 105)', url: 'https://www.bls.gov/opub/copyright-information.htm' },
+  { id: 'onet', who: 'O*NET 31.0 Database', what: onet.citation, license: 'CC BY 4.0', url: onet.licenseUrl! },
+  { id: 'microsoft', who: 'Microsoft Research, "Working with AI"', what: 'AI applicability scores by occupation (Tomlinson, Jaffe, Wang, Counts & Suri, 2026).', license: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/' },
+  { id: 'openai', who: 'OpenAI / Eloundou, Manning, Mishkin & Rock, "GPTs are GPTs"', what: 'Occupation-level LLM exposure ratings (dv_rating_beta), Science 384 (2024).', license: 'MIT License', url: 'https://github.com/openai/GPTs-are-GPTs/blob/main/LICENSE' },
+  { id: 'fonts', who: 'JetBrains Mono, IBM Plex Mono, Atkinson Hyperlegible', what: 'Typefaces served by Google Fonts.', license: 'SIL Open Font License 1.1', url: 'https://openfontlicense.org/' },
+];
 ---
 
 <BaseLayout title="About" description="What the Human Obsolescence Index is, how it stays honest, and who supplies the data.">
-  <section class="mx-auto max-w-3xl px-4 py-12 md:px-6">
+  <article class="mx-auto max-w-3xl px-4 py-12 md:px-6">
     <p class="term-label text-phosphor">Prospectus disclosures</p>
     <h1 class="mt-3 font-display text-3xl font-extrabold uppercase tracking-tight">About</h1>
-    <p class="placeholder-flag term-label mt-6 px-3 py-2" data-placeholder>Under construction · This page ships with the site pages release</p>
-    <p class="prose-block mt-6 text-dim">What this index is, the honesty rules it follows, and full licensing credits for every dataset will live here.</p>
-  </section>
+
+    <section class="mt-8" aria-labelledby="what-title">
+      <h2 id="what-title" class="font-display text-xl font-bold uppercase">What this is</h2>
+      <div class="prose-block mt-3 space-y-3">
+        <p>
+          A stock exchange for human worth. The Human Obsolescence Index lists {board.length} U.S. occupations like
+          securities and prices each one by how much of its work AI can touch and whether the government expects it to
+          shrink. The ticker is a joke. The numbers are not.
+        </p>
+        <p>
+          Each occupation gets a page with its score, the parts that make it up, what the job actually involves, and
+          related jobs that BLS projects to grow. The {META.edition} edition uses data retrieved on {META.dataAsOf}; it is
+          re-run every quarter (see the <a class="underline" href="/changelog/">changelog</a>).
+        </p>
+      </div>
+    </section>
+
+    <section class="mt-10" aria-labelledby="honesty-title" id="honesty">
+      <h2 id="honesty-title" class="font-display text-xl font-bold uppercase">Gallows humor, with receipts</h2>
+      <div class="prose-block mt-3 space-y-3">
+        <p>
+          We make jokes about the end of work because the alternative is pretending to be calm about it. The jokes stay in
+          the headlines. Everything underneath is sourced.
+        </p>
+        <ul class="list-disc space-y-2 pl-5">
+          <li>Every number on this site comes from a public dataset named in the <a class="underline" href="/methodology/#sources">source manifest</a>, with its retrieval date and file hash.</li>
+          <li>Exposure is not job loss. We say it on every occupation page, and BLS and Microsoft say it about their own data.</li>
+          <li>The official BLS category always sits next to our score, labeled as BLS's, so you can see where we agree and where we don't.</li>
+          <li>Missing data gets a visible flag, never a guess.</li>
+          <li>The formula and weights are public. If you think they are wrong, you can recompute everything from the stat pack.</li>
+        </ul>
+        <p>Punch hard, land helpful: every page ends with roles that are still growing.</p>
+      </div>
+    </section>
+
+    <section class="mt-10" aria-labelledby="licensing-title" id="licensing">
+      <h2 id="licensing-title" class="font-display text-xl font-bold uppercase">Licensing and credits</h2>
+      <ul class="mt-4 space-y-3" data-credits>
+        {
+          CREDITS.map((c) => (
+            <li class="panel p-4" data-credit={c.id}>
+              <p class="font-semibold">{c.who}</p>
+              <p class="mt-1 text-sm text-dim">{c.what}</p>
+              <p class="term-label mt-2">License: <a class="underline" href={c.url}>{c.license}</a></p>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="prose-block mt-4 text-dim">
+        O*NET® is a trademark of USDOL/ETA. Our derived composite scores are released under CC BY 4.0; please credit the
+        Human Obsolescence Index. Cited but never used as data: the Stanford Digital Economy Lab "Canaries" study (linked on
+        the <a class="underline" href="/methodology/#reality-check">methodology page</a>).
+      </p>
+    </section>
+  </article>
 </BaseLayout>
