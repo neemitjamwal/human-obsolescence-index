@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Direction A · The Daily Doom · Human Obsolescence Index mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;700;900&family=Permanent+Marker&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="mock-tag">MOCKUP · Direction A · “The Daily Doom”</div>
+
+<header class="masthead">
+  <div class="masthead__ears">
+    <span>2026-Q4 EDITION</span>
+    <span>PRICE: YOUR JOB</span>
+  </div>
+  <h1 class="masthead__name">THE DAILY DOOM</h1>
+  <p class="masthead__sub">The Human Obsolescence Index · 120 jobs ranked by AI exposure &amp; BLS projections</p>
+</header>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker__track">
+    <span>BREAKING ★ TELEMARKETERS 99 ★ DATA ENTRY KEYERS 97 ★ ORDER CLERKS 96 ★ COMPUTER PROGRAMMERS 94 ★ CUSTOMER SERVICE REPRESENTATIVES 92 ★ FILE CLERKS 92 ★ PLUMBERS, PIPEFITTERS, AND STEAMFITTERS 18 (UNBOTHERED) ★&nbsp;</span>
+    <span>BREAKING ★ TELEMARKETERS 99 ★ DATA ENTRY KEYERS 97 ★ ORDER CLERKS 96 ★ COMPUTER PROGRAMMERS 94 ★ CUSTOMER SERVICE REPRESENTATIVES 92 ★ FILE CLERKS 92 ★ PLUMBERS, PIPEFITTERS, AND STEAMFITTERS 18 (UNBOTHERED) ★&nbsp;</span>
+  </div>
+</div>
+
+<main>
+  <!-- HOOK: Type your job, mid-interaction -->
+  <section class="hook" aria-labelledby="hook-h">
+    <h2 id="hook-h" class="hook__h">TYPE YOUR JOB.<br><span class="hl">WE PRINT THE HEADLINE.</span></h2>
+
+    <form class="search" onsubmit="return false">
+      <label class="search__label" for="job">YOUR JOB</label>
+      <div class="search__row">
+        <input id="job" class="search__input" value="telemarket" autocomplete="off" aria-describedby="sugg">
+        <button class="search__btn" type="button">EXPOSE ME</button>
+      </div>
+      <ul id="sugg" class="sugg" role="listbox">
+        <li role="option" aria-selected="true" class="is-active"><b>Telemarketers</b><span class="sugg__score">99</span></li>
+        <li role="option"><b>Telephone operators</b><span class="sugg__score">98</span></li>
+      </ul>
+      <label class="name" for="first">Put your name in the paper <i>(optional, never leaves your phone)</i>
+        <input id="first" class="name__input" value="Dave" maxlength="20">
+      </label>
+    </form>
+
+    <!-- VERDICT reveal -->
+    <article class="verdict" aria-label="Verdict for Telemarketers">
+      <p class="verdict__kicker">EXCLUSIVE · JOB No. 41-9041</p>
+      <h3 class="verdict__head">DAVE, THE ROBOTS HAVE YOUR NUMBER</h3>
+      <div class="verdict__splash">
+        <div class="burst"><span class="burst__n">99</span><span class="burst__of">OUT OF 100</span></div>
+        <div class="verdict__facts">
+          <p class="stamp">SEVERE</p>
+          <p class="fact"><b>#1</b> of 120 on the Hall of Shame</p>
+          <p class="fact">BLS projects <b>−21.4%</b> by 2035: <b>60,900 → 47,800</b> jobs</p>
+          <p class="fact">BLS official AI exposure: <b>Very high</b></p>
+        </div>
+      </div>
+      <p class="roast">“The robocall got a promotion. Dave got a 99.”</p>
+      <div class="actions">
+        <button type="button" class="btn btn--red">⬇ STORY CARD</button>
+        <button type="button" class="btn">SHARE</button>
+        <button type="button" class="btn">COPY LINK</button>
+      </div>
+      <p class="fine">AI exposure ≠ job loss. Score = 65% exposure (Microsoft + OpenAI research) + 35% BLS 2025–35 projection. humanobsolescenceindex.com</p>
+    </article>
+
+    <!-- SHARE CARD 1080x1920 preview -->
+    <figure class="card-wrap">
+      <div class="story" role="img" aria-label="1080 by 1920 story card preview for Dave, Telemarketers, score 99">
+        <div class="story__mast">THE DAILY DOOM</div>
+        <div class="story__strap">HUMAN OBSOLESCENCE INDEX · 2026-Q4</div>
+        <p class="story__who">DAVE’S JOB</p>
+        <p class="story__n">99</p>
+        <p class="story__job">TELEMARKETERS</p>
+        <p class="story__rank">#1 MOST EXPOSED OF 120</p>
+        <p class="story__roast">The robocall got a promotion.</p>
+        <p class="story__stat">BLS: −21.4% by 2035</p>
+        <p class="story__scrawl">beat that →</p>
+        <p class="story__fine">AI exposure ≠ job loss · humanobsolescenceindex.com</p>
+      </div>
+      <figcaption>Story card · 1080 × 1920 · downloads as PNG</figcaption>
+    </figure>
+  </section>
+
+  <!-- SECONDARY: hall of shame + battle -->
+  <section class="shame" aria-labelledby="shame-h">
+    <h2 id="shame-h" class="shame__h">HALL OF <span>SHAME</span></h2>
+    <p class="shame__dek">The 10 most AI-exposed jobs in America. Each one can be shared as its own front page.</p>
+    <ol class="rows">
+      <li><span class="r">1</span><span class="t">Telemarketers</span><span class="bar" style="--s:99"></span><span class="s">99</span></li>
+      <li><span class="r">2</span><span class="t">Data entry keyers</span><span class="bar" style="--s:97"></span><span class="s">97</span></li>
+      <li><span class="r">3</span><span class="t">Order clerks</span><span class="bar" style="--s:96"></span><span class="s">96</span></li>
+      <li><span class="r">4</span><span class="t">Computer programmers</span><span class="bar" style="--s:94"></span><span class="s">94</span></li>
+      <li><span class="r">5</span><span class="t">Customer service representatives</span><span class="bar" style="--s:92"></span><span class="s">92</span></li>
+      <li><span class="r">6</span><span class="t">File clerks</span><span class="bar" style="--s:92"></span><span class="s">92</span></li>
+      <li><span class="r">7</span><span class="t">Advertising sales agents</span><span class="bar" style="--s:91"></span><span class="s">91</span></li>
+      <li><span class="r">8</span><span class="t">Computer user support specialists</span><span class="bar" style="--s:90"></span><span class="s">90</span></li>
+      <li><span class="r">9</span><span class="t">Payroll and timekeeping clerks</span><span class="bar" style="--s:90"></span><span class="s">90</span></li>
+      <li><span class="r">10</span><span class="t">Editors</span><span class="bar" style="--s:89"></span><span class="s">89</span></li>
+    </ol>
+
+    <article class="battle" aria-label="Who's safer battle teaser">
+      <p class="battle__k">WHO’S SAFER? · READER POLL</p>
+      <div class="battle__ring">
+        <div class="fighter fighter--l"><p class="fighter__n">99</p><p class="fighter__t">Telemarketers</p></div>
+        <div class="vs">VS</div>
+        <div class="fighter fighter--r"><p class="fighter__n">18</p><p class="fighter__t">Plumbers, pipefitters, and steamfitters</p></div>
+      </div>
+      <p class="battle__verdict">PLUMBERS WIN BY 81. <span>You can’t email a leaking pipe.</span></p>
+      <p class="battle__sub">BLS projects plumbers <b>+6.8%</b> by 2035, telemarketers <b>−21.4%</b>.</p>
+      <button type="button" class="btn btn--yellow">PICK TWO JOBS. START A FIGHT.</button>
+      <p class="fine">AI exposure ≠ job loss · humanobsolescenceindex.com</p>
+    </article>
+  </section>
+</main>
+<footer class="foot">Design mockup only · not deployed · data: Human Obsolescence Index 2026-Q4 (BLS, O*NET 31.0, Microsoft, OpenAI)</footer>
+</body>
+</html>
