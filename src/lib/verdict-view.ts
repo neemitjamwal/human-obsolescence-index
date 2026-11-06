@@ -2,6 +2,7 @@ import { formatJobs, formatScore, formatSignedPercent, formatUsd } from './forma
 import { BAND_LABELS, type BlsCategory, type ScoreBand } from './ledger';
 import { nameFragment, possessive } from './name';
 import { SITE_DOMAIN } from './site';
+import { museumObituaryUrl, precedentLink, type PrecedentLink } from '../data/precedents';
 
 /** The verdict fields the reveal, the /v/ pages and the share cards print. Built at build time for every scored occupation. */
 export type VerdictRecord = {
@@ -56,6 +57,10 @@ export type VerdictView = {
   fine: string;
   url: string;
   edition: string;
+  /** The museum's obituary for this occupation. */
+  obituaryUrl: string;
+  /** The mapped museum exhibit, or null when no precedent is mapped. */
+  precedent: PrecedentLink | null;
 };
 
 function capitalize(s: string): string {
@@ -95,6 +100,8 @@ export function verdictView(v: VerdictRecord, feed: Pick<VerdictFeed, 'edition' 
     fine: `${DISCLAIMER_SHORT}. ${FORMULA_LINE}.`,
     url: SITE_DOMAIN,
     edition: feed.edition,
+    obituaryUrl: museumObituaryUrl(v.slug),
+    precedent: precedentLink(v.soc),
   };
 }
 

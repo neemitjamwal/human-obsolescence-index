@@ -40,6 +40,17 @@ export function fillVerdict(panel: HTMLElement, view: VerdictView, record: Verdi
   stamp?.classList.toggle('stamp-ink', view.band === 'moderate');
   const chip = panel.querySelector<HTMLElement>('[data-v-chip]');
   if (chip) chip.className = `category-chip ${categoryClass(record.blsCategory)}`;
+  const obituary = panel.querySelector<HTMLAnchorElement>('[data-vlink="obituary"]');
+  if (obituary) obituary.href = view.obituaryUrl;
+  const precedentItem = panel.querySelector<HTMLElement>('[data-vlink-item="precedent"]');
+  const precedent = panel.querySelector<HTMLAnchorElement>('[data-vlink="precedent"]');
+  if (precedentItem && precedent) {
+    // No placeholder href: a job without a mapped exhibit has no precedent link at all.
+    if (view.precedent) precedent.href = view.precedent.url;
+    else precedent.removeAttribute('href');
+    precedent.querySelector('[data-vlink-label]')!.textContent = view.precedent?.label ?? '';
+    precedentItem.hidden = !view.precedent;
+  }
   const pose = ROBOT_POSE_BY_BAND[view.band];
   panel.querySelectorAll<HTMLElement>('[data-v-pose]').forEach((el) => {
     el.hidden = el.dataset.vPose !== pose;

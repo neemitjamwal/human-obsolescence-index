@@ -917,6 +917,9 @@
   .verdict-roast { font-size: clamp(1.35rem, 5vw, 2rem); color: #0b3bd6; }
   .verdict-cameo .robot { width: 100%; height: auto; }
   .verdict-fine { font-size: 0.8125rem; }
+  .verdict-links { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+  .verdict-links li { min-width: 0; max-width: 100%; }
+  .verdict-links .btn { white-space: normal; text-align: left; line-height: 1.15; }
 
   .verdict-countdown {
     position: absolute;

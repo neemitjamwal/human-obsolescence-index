@@ -91,6 +91,14 @@ const photo = ART.verdictRobot;
       <span data-vf="fine">{view.fine}</span>
       {' '}<a href="/methodology/" class="font-bold">How the Doom Score works →</a>
     </p>
+    <ul class="verdict-links mt-4" data-museum-links>
+      <li>
+        <a class="btn btn-red" href={view.obituaryUrl} data-vlink="obituary">Read its obituary →<span class="sr-only"> at the Museum of Extinct Jobs</span></a>
+      </li>
+      <li data-vlink-item="precedent" hidden={!view.precedent}>
+        <a class="btn" href={view.precedent?.url} data-vlink="precedent"><span data-vlink-label>{view.precedent?.label ?? ''}</span> →</a>
+      </li>
+    </ul>
     <p class="kicker mt-2">
       Sources: <CiteLink id="hoi-composite" local={local} /> · <CiteLink id="bls-ep" local={local} /> ·
       {' '}<CiteLink id="bls-ai-exposure" local={local} />

@@ -113,6 +113,7 @@ for (const o of data.occupations) {
   if (!html.includes(DISCLAIMER) && !html.includes(DISCLAIMER_ALT)) failures.push(`${rel} is missing the exposure disclaimer`);
   if (!html.includes('href="/methodology/"')) failures.push(`${rel} does not link the methodology`);
   if (!html.includes('data-museum-precedent-slot=')) failures.push(`${rel} has no museum precedent slot`);
+  if (!html.includes(`href="https://museumofextinctjobs.com/obituary/${o.slug}/"`)) failures.push(`${rel} does not link its museum obituary`);
   const cites = attrValues(html, 'data-cite');
   const receipts = new Set(attrValues(html, 'data-source-id'));
   citationLinks += cites.length;
@@ -423,7 +424,10 @@ for (const host of ['weforum.org', 'layoffs.fyi']) {
 }
 // ---- /v/<slug>/ verdict pages: one per scored occupation, with Doom Score, disclaimer, sources and a 1200x630 card ----
 const verdictsFile = JSON.parse(readFileSync(join(root, 'src/data/verdicts.json'), 'utf8'));
+const { museumObituaryUrl, precedentLink } = await import('../src/data/precedents.ts');
 let verdictPages = 0;
+let obituaryLinks = 0;
+let verdictPrecedentLinks = 0;
 for (const v of verdictsFile.verdicts) {
   const rel = `v/${v.slug}/index.html`;
   const html = readDist(rel);
@@ -443,6 +447,16 @@ for (const v of verdictsFile.verdicts) {
     for (const c of ['exposure', 'trajectory', 'obs']) if (!html.includes(`data-component="${c}"`)) failures.push(`${rel} is missing compact component ${c}`);
   }
   if (!html.includes('data-source-id=')) failures.push(`${rel} has no source receipts`);
+  // Cross loop: every verdict links its museum obituary (same slug); a mapped precedent links its exhibit, an unmapped one links nothing.
+  if (html.includes(`href="${museumObituaryUrl(v.slug)}" data-vlink="obituary"`) && html.includes('Read its obituary')) obituaryLinks += 1;
+  else failures.push(`${rel} does not link its museum obituary ${museumObituaryUrl(v.slug)}`);
+  const precedent = precedentLink(v.soc);
+  if (precedent) {
+    if (html.includes(`href="${precedent.url}" data-vlink="precedent"`)) verdictPrecedentLinks += 1;
+    else failures.push(`${rel} does not link its museum precedent ${precedent.url}`);
+  } else if (/data-vlink="precedent"[^>]*href=|href="[^"]*"\s+data-vlink="precedent"/.test(html) || html.includes('museumofextinctjobs.com/exhibits/')) {
+    failures.push(`${rel} renders a precedent link without a mapped precedent`);
+  }
   if (metaContent(html, 'og:image') !== `${SITE}/og/v/${v.slug}.png`) failures.push(`${rel} og:image is not ${SITE}/og/v/${v.slug}.png`);
 }
 if (verdictPages !== verdictsFile.verdicts.length) failures.push(`${verdictPages} verdict pages built for ${verdictsFile.verdicts.length} scored occupations`);
@@ -543,6 +557,6 @@ console.log(
     `(${(cssBytes / 1024).toFixed(1)} KB) with all Daily Doom tokens and no v1 tokens, ticker + hero slot on home, ledger on /leaderboard/, no localhost URLs; ` +
     `${occupationPages} occupation pages with all components (${citationLinks} citation links, all resolving to sources.json), ` +
     `${precedentLinks} museum precedent links, embed widget with ${embedEntriesCount} occupations, ${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes (${growthBranches.stronger} stronger-growth, ${growthBranches.weaker} weaker-growth), stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
-    `search index ${(searchIndexGzip / 1024).toFixed(1)} KB gzip; ${verdictPages} /v/ verdict pages + ${ogVerdictCards} verdict OG cards; ${battlePages} /vs/ battle pages + ${ogBattleCards} battle OG cards, hall of shame top ${shameRows.length}; front page initial JS ${(homeJsGzip / 1024).toFixed(1)} KB gzip; ${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
+    `search index ${(searchIndexGzip / 1024).toFixed(1)} KB gzip; ${verdictPages} /v/ verdict pages + ${ogVerdictCards} verdict OG cards (${obituaryLinks} museum obituary links, ${verdictPrecedentLinks} museum precedent links); ${battlePages} /vs/ battle pages + ${ogBattleCards} battle OG cards, hall of shame top ${shameRows.length}; front page initial JS ${(homeJsGzip / 1024).toFixed(1)} KB gzip; ${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
     `${textFiles.length} text files free of localhost/127.0.0.1, red-list sources only as cite-only links, licensing credits on /about/`,
 );

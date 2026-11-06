@@ -1,6 +1,8 @@
 # Human Obsolescence Index
 
-A stock exchange for human worth: [humanobsolescenceindex.com](https://humanobsolescenceindex.com).
+**The Daily Doom: type your job, the robots print the headline.** [humanobsolescenceindex.com](https://humanobsolescenceindex.com).
+
+The relaunched Index is a robot-uprising tabloid built on real labor data. Type any of the 784 scored occupations into the "Type your job" box and the verdict slams in like a printing press: a Doom Score out of 100, the official BLS AI exposure category, a roast built only from real numbers, and a red-eyed robot at the window. You can add an optional first name and share the result as a canvas card. "Who's safer?" pits two jobs against each other, and the hall of shame lists the most doomed. The robots are theatre; every number is data, and every result says "AI exposure ≠ job loss" next to a methodology link. The visual system ("The Daily Doom") is recorded in the mission's design direction and mocked up in `design-directions/tabloid-doom/` (never deployed; see `design-directions/README.md`).
 
 The index ranks U.S. occupations by a composite **OBS score** (0–100) built from public data: how much of an occupation's work AI can already touch (Microsoft's observed Copilot applicability and the Eloundou et al. "GPTs are GPTs" exposure ratings) and where the U.S. Bureau of Labor Statistics projects its employment to go from 2025 to 2035. The official BLS AI exposure category is shown beside our number, never merged into it. Every occupation page carries its score breakdown, O*NET tasks, growing adjacent roles, employment and wage context, and a receipt for every number. The tone is gallows humor with receipts, and exposure is never presented as job loss.
 
@@ -15,19 +17,30 @@ It is a static Astro 7 site with Tailwind v4 (via `@tailwindcss/vite`), vanilla 
 
 If your system Node is older, run each command through a temporary Node, for example `npx -y -p node@22.22.0 -- npm run build`.
 
+## Routes
+
+| Route | What it is |
+| --- | --- |
+| `/` | Front page: the "Type your job" combobox and optional first name, the verdict reveal and share panel, the hall of shame (top 20) and the "Who's safer?" teaser |
+| `/v/<slug>/` | A static verdict page for every scored occupation (784), with receipts, a 1200×630 OG card, a "Read its obituary" link to the museum and, where one is mapped, a "Historical precedent" link to a museum exhibit |
+| `/vs/` and `/vs/<a>-vs-<b>/` | "Who's safer?": a two-combobox battle (`/vs/?a=<slug>&b=<slug>`) plus 40 curated static fights with OG cards |
+| `/leaderboard/` | The full ranked board of 120 |
+| `/occupations/<slug>/` | The full file for each of the 152 published occupations |
+| `/methodology/`, `/press/`, `/changelog/`, `/about/`, `/embed/` | Methodology with BLS limits quoted verbatim, press stat pack, edition log, credits, and the iframe widget |
+
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `npm run build:index` | The data pipeline. Downloads the 7 source files into `.cache/raw/`, parses, joins on SOC codes, scores, and writes `src/data/occupations.json` and `src/data/sources.json`. Cached files are re-validated and reused, so a re-run with the same inputs produces byte-identical JSON |
+| `npm run build:index` | The data pipeline. Downloads the 7 source files into `.cache/raw/`, parses, joins on SOC codes, scores, and writes `src/data/occupations.json`, `src/data/sources.json`, `src/data/verdicts.json` (every scored occupation) and `public/data/search-index.json` (the lazily fetched job-title index, with O*NET alternate titles and `src/data/slang-aliases.ts`). Cached files are re-validated and reused, so a re-run with the same inputs produces byte-identical JSON |
 | `npm run build:index -- --refresh` | Same, but re-downloads every source (at most one request per 1.1 s) |
 | `npm run dev` | Astro dev server |
 | `npm run build` | Writes the press stat pack (`public/stat-pack/`), resizes the robot-uprising art in `art/` into responsive AVIF/WebP files in `public/art/` (`scripts/art.mjs`), renders the OG cards (`og:cards`), then runs `astro build` into `dist/` |
 | `npm run preview` | Serves `dist/` |
-| `npm run og:cards` | Renders a 1200×630 terminal-style verdict PNG per occupation (title, OBS score, band, BLS category chip, index mark) plus the site card into `public/og/`, and one robot-uprising card per scored occupation for its `/v/<slug>/` verdict page into `public/og/v/`. Deterministic and idempotent: unchanged cards are not rewritten, stale ones are removed |
-| `npm run test` | vitest: deterministic OBS recomputation from a fixture, join sanity (SOC codes, never titles), coverage flags, manifest completeness, page content, OG cards, sitemap/robots, licensing credits and red-list discipline (plus a scan of `dist/` for local URLs, red-list mentions and raw data files when a build exists) |
+| `npm run og:cards` | Renders the 1200×630 Daily Doom PNG cards: one per published occupation plus the site card into `public/og/`, one robot-uprising card per scored occupation for its `/v/<slug>/` verdict page into `public/og/v/`, and one per curated battle into `public/og/vs/`. Deterministic and idempotent: unchanged cards are not rewritten, stale ones are removed |
+| `npm run test` | vitest: deterministic OBS recomputation from a fixture, join sanity (SOC codes, never titles), coverage flags, manifest completeness, verdicts.json parity, the matcher, roasts and share cards, battles, Doom Score labels, museum cross-links, the launch kit's stat ledger (`tests/launch-kit.test.ts`), page content, OG cards, sitemap/robots, licensing credits and red-list discipline. When a build exists it also scans `dist/` for local URLs, red-list mentions, raw data files, and panic copy (`tests/panic-honesty.test.ts`: every number next to a job count, percentage or year must trace to the data or source register, and no copy may mock workers) |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm run verify` | Post-build checks on `dist/`: every page and score component, every citation resolving to `sources.json`, leaderboard order, stat pack, methodology quotes, share meta on every page, every `og:image` present as a 1200×630 PNG, a sitemap listing every page, robots.txt, no `localhost`/`127.0.0.1` URLs anywhere in the output, licensing credits on `/about/`, WEF and layoffs.fyi only as labeled cite-only links, and no raw data files beyond the stat pack |
+| `npm run verify` | Post-build checks on `dist/`: every page and score component, every `/v/` page with its disclaimer, museum obituary link and mapped precedent, every battle page, the hall of shame, the front-page JS budget (60 KB gzip) and search index budget (150 KB gzip), every citation resolving to `sources.json`, leaderboard order, stat pack, methodology quotes, share meta on every page, every `og:image` present as a 1200×630 PNG, a sitemap listing every page, robots.txt, no `localhost`/`127.0.0.1` URLs anywhere in the output, licensing credits on `/about/`, WEF and layoffs.fyi only as labeled cite-only links, and no raw data files beyond the stat pack |
 
 The full gate is `npm run test`, `npm run typecheck`, `npm run build` and `npm run verify`. All four must exit 0. `build` does not run the pipeline: the generated JSON is committed, so Netlify never downloads from BLS.
 
@@ -53,7 +66,9 @@ The result lists violations as `[id, impact, nodeCount]`; the budget is an empty
 
 - `scripts/build-index.mjs` and `scripts/lib/`: the pipeline (`config` pins, `download`, `zip`, `parse`, `join`, `score`, `select`, `emit`).
 - `src/data/occupations.json`, `src/data/sources.json`: generated and committed. Every field is `{ value, sourceId }`.
-- `src/pages/index.astro` (leaderboard), `src/pages/occupations/[slug].astro` (one page per occupation), `methodology`, `press`, `changelog`, `about`.
+- `src/pages/index.astro` (front page), `src/pages/leaderboard.astro`, `src/pages/occupations/[slug].astro` (one page per published occupation), `src/pages/vs/` (battles), `methodology`, `press`, `changelog`, `about`, `embed`.
+- `art/`: the original robot-uprising art (never deployed). `scripts/art.mjs` writes the responsive AVIF/WebP copies to `public/art/`.
+- `launch/LAUNCH-KIT.md`: the launch and distribution kit (Show HN, Reddit, X, LinkedIn, Product Hunt, 10 short-video hooks, press pitches, a 14-day schedule). Every number in it is listed in its stat ledger and checked against the data by `tests/launch-kit.test.ts`; edit the ledger whenever the kit's copy changes, and re-check it after each new edition.
 - `src/pages/index.astro` hero, `src/lib/hero.ts`: the "Type your job" combobox, which fetches `/data/search-index.json` and `/data/verdicts.json` on first focus. `src/pages/v/[slug].astro`: a static verdict page for every scored occupation. `src/components/VerdictPanel.astro`, `src/lib/verdict-dom.ts`: the verdict and its reveal. `src/components/SharePanel.astro`, `src/lib/share-panel.ts`, `src/lib/card.ts`: the canvas share cards (1080×1920 and 1200×630) and Download / Share / Copy link. `src/data/roasts.ts`: the robot-uprising copy bank. `src/lib/robots.ts`: the cartoon SVG robots.
 - Share links: a verdict link is `/v/<slug>/`, and the optional first name rides in the URL fragment as `/v/<slug>/#n=<encoded-name>` (built by `sharePath` in `src/lib/verdict-view.ts`, read by `nameFromHash` in `src/lib/name.ts`). Browsers do not send the fragment in HTTP requests, so the name never reaches the server; the page script restores it on load, drops any name the sanitizer would have to change, and ignores `?n=`. The name is still visible in the address bar and browser history and travels with the link when someone shares it.
 - `src/lib/seo.ts`: share descriptions, OG image paths, and the page list behind `sitemap.xml` and `robots.txt`.
@@ -91,8 +106,11 @@ The pipeline never publishes a partial or silently wrong index. `npm run build:i
 ## Content rules
 
 - Every number displayed on any page resolves to a `sourceId` in `sources.json` (test- and verify-enforced). Joins use SOC 2018 codes, never titles.
-- Exposure is never presented as job loss. The disclaimer appears on every occupation page, and BLS's interpretation limits are quoted verbatim on the methodology page, along with Microsoft's out-of-scope warning.
+- Exposure is never presented as job loss. "AI exposure ≠ job loss" appears next to every verdict, battle and occupation result (share cards carry the site URL instead), and BLS's interpretation limits are quoted verbatim on the methodology page, along with Microsoft's out-of-scope warning.
 - The official BLS category is always shown beside the OBS score and attributed to BLS.
+- The headline number is the Doom Score (OBS). It is never labeled "exposure"; the separate AI exposure percentile is labeled as such (test-enforced).
+- Robot-uprising copy (`src/data/roasts.ts`) may panic but carries no invented numbers, dates, predictions or quotes; roasts interpolate only real fields; the robots are the villains, never the worker.
+- The optional first name is sanitized, rendered as text only, and kept in the URL fragment; it is never sent to a server.
 - Missing components get visible coverage flags. The count of occupations without Microsoft scores is rendered from the data, never hardcoded.
 - WEF Future of Jobs 2025 and layoffs.fyi may appear only as labeled cite-links (listed in `src/data/credits.ts` and rendered on `/about/`), never as data inputs. The Stanford "Canaries" paper is cited and linked; its raw data is not re-hosted.
 
@@ -105,11 +123,14 @@ The pipeline never publishes a partial or silently wrong index. `npm run build:i
   - Microsoft Research "Working with AI" applicability scores: CC BY 4.0.
   - OpenAI / Eloundou et al. "GPTs are GPTs" occupation-level ratings: MIT.
 - The OBS score and the stat pack (`/stat-pack/`) are derived work; cite them as "Human Obsolescence Index, <edition> edition".
-- Fonts: JetBrains Mono, IBM Plex Mono and Atkinson Hyperlegible (SIL Open Font License), served by Google Fonts. The OG cards are rendered with the system's monospace fallback when those fonts are not installed, so card typography can differ between Windows and Netlify's Linux build image.
+- Fonts: Anton, Archivo and Permanent Marker (SIL Open Font License), served by Google Fonts; `/embed/` self-hosts Anton and Archivo from `public/fonts/`. The OG cards fall back to system fonts when those are not installed, so card typography can differ between Windows and Netlify's Linux build image.
+- The robot-uprising art in `art/` was generated for this project.
 
 ## Museum cross-links and the embed widget
 
-- `src/data/precedents.ts` maps SOC codes to Museum of Extinct Jobs exhibits. Occupation pages render them as "Historical precedent: The … thought so too" links built from `MUSEUM_BASE_URL` at the top of that file. `tests/crosslinks-embed.test.ts` checks every exhibit slug against the sibling `../museum-of-extinct-jobs` checkout when it is present.
+- `src/data/precedents.ts` maps SOC codes to Museum of Extinct Jobs exhibits. Occupation pages and verdicts (the front-page reveal and every `/v/` page) render them as "Historical precedent: The … thought so too" links built from `MUSEUM_BASE_URL` at the top of that file; jobs without a mapped precedent show no precedent link.
+- Every verdict and occupation page also links "Read its obituary" to `https://museumofextinctjobs.com/obituary/<slug>/` (`museumObituaryUrl`). The museum builds an obituary for every scored occupation under the Index slug, from its committed snapshot of `verdicts.json`. In the other direction, each museum obituary links "See your live score" back to `/v/<slug>/`.
+- `tests/crosslinks-embed.test.ts` checks every exhibit slug, and every obituary slug against the museum's committed snapshot, in the sibling `../museum-of-extinct-jobs` checkout when it is present (`MUSEUM_REPO_DIR` overrides the path). After a pipeline run, run `npm run sync:index` in the museum so its snapshot matches.
 - `/embed/` (`src/pages/embed.astro`) is a self-contained, iframe-able ticker and score lookup for the leaderboard occupations. It uses inline CSS and vanilla inline JS over embedded JSON, makes no third-party requests, and shows the copy-paste iframe snippet with an attribution link. When framed, the snippet section hides itself.
 
 ## Deploy (Netlify from GitHub)

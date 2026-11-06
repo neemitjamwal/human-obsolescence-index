@@ -1,8 +1,9 @@
 ---
-import { MUSEUM_PRECEDENTS, museumExhibitUrl, precedentHeadline } from '../data/precedents';
+import { MUSEUM_PRECEDENTS, museumExhibitUrl, museumObituaryUrl, precedentHeadline } from '../data/precedents';
 
 interface Props {
   soc: string;
+  slug: string;
 }
 
 const precedent = MUSEUM_PRECEDENTS[Astro.props.soc];
@@ -24,4 +25,7 @@ const precedent = MUSEUM_PRECEDENTS[Astro.props.soc];
       </aside>
     )
   }
+  <p class="mt-6" data-museum-obituary>
+    <a class="btn btn-red" href={museumObituaryUrl(Astro.props.slug)}>Read its obituary →<span class="sr-only"> at the Museum of Extinct Jobs</span></a>
+  </p>
 </div>

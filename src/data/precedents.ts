@@ -19,7 +19,7 @@ const HUMAN_COMPUTER: MuseumExhibit = {
   name: 'Human computer',
   headline: 'The Human Computer',
   context:
-    'The word "computer" once meant a person who did mathematics by hand. From ENIAC (1945) onward, electronic computers did in minutes what a room of humans did in weeks, and kept the job title.',
+    'The word "computer" once meant a person who did mathematics by hand; the Nautical Almanac began employing them in 1767. From ENIAC (1945) onward, electronic computers did in minutes what a room of humans did in weeks, and kept the job title.',
 };
 
 const TELEGRAPH: MuseumExhibit = {
@@ -73,4 +73,16 @@ export function museumExhibitUrl(exhibit: Pick<MuseumExhibit, 'slug'>): string {
 
 export function precedentHeadline(p: MuseumPrecedent): string {
   return `Historical precedent: ${p.exhibit.headline} thought so too`;
+}
+
+/** The museum publishes an obituary for every scored occupation under the same slug the Index uses for /v/<slug>/. */
+export function museumObituaryUrl(slug: string): string {
+  return `${MUSEUM_BASE_URL}/obituary/${slug}/`;
+}
+
+export type PrecedentLink = { url: string; label: string; exhibitSlug: string };
+
+export function precedentLink(soc: string): PrecedentLink | null {
+  const p = MUSEUM_PRECEDENTS[soc];
+  return p ? { url: museumExhibitUrl(p.exhibit), label: precedentHeadline(p), exhibitSlug: p.exhibit.slug } : null;
 }

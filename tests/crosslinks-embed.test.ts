@@ -2,7 +2,10 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { META, OCCUPATIONS, leaderboard } from '../src/lib/data';
-import { MUSEUM_BASE_URL, MUSEUM_PRECEDENTS, museumExhibitUrl, precedentHeadline } from '../src/data/precedents';
+import { MUSEUM_BASE_URL, MUSEUM_PRECEDENTS, museumExhibitUrl, museumObituaryUrl, precedentHeadline, precedentLink } from '../src/data/precedents';
+import { VERDICTS, VERDICTS_META } from '../src/lib/verdicts';
+import { verdictRecord } from '../src/lib/verdict-feed';
+import { verdictView } from '../src/lib/verdict-view';
 import { EMBED_PATH, embedEntries, embedJson, embedSnippet } from '../src/lib/embed';
 import { sitePaths } from '../src/lib/seo';
 
@@ -13,6 +16,7 @@ const site = new URL('https://humanobsolescenceindex.com');
 const museumRoot = process.env.MUSEUM_REPO_DIR ?? join(root, '..', 'museum-of-extinct-jobs');
 const museumExhibits = join(museumRoot, 'src', 'data', 'exhibits.ts');
 const museumAiWing = join(museumRoot, 'src', 'data', 'ai-wing.ts');
+const museumSnapshot = join(museumRoot, 'src', 'data', 'index-snapshot.json');
 
 describe('museum precedents (Index data)', () => {
   it('defines the museum production origin once, without a trailing slash or a local host', () => {
@@ -95,6 +99,57 @@ describe.skipIf(!existsSync(museumAiWing))('museum AI-wing links point at Index 
       expect(META.forcedInclusions.museumPrecedent.socs, soc).toContain(soc);
       expect(OCCUPATIONS.find((o) => o.soc === soc)?.inclusion, soc).toContain('museum-precedent');
     }
+  });
+});
+
+describe('verdict → museum obituary and precedent (Index data)', () => {
+  const feed = { edition: VERDICTS_META.edition, boardSize: META.leaderboard.size };
+
+  it('every verdict view links its museum obituary under the same slug, on the production domain', () => {
+    for (const v of VERDICTS) {
+      const view = verdictView(verdictRecord(v), feed);
+      expect(view.obituaryUrl).toBe(`https://museumofextinctjobs.com/obituary/${v.slug}/`);
+      expect(view.obituaryUrl).toBe(museumObituaryUrl(v.slug));
+    }
+  });
+
+  it('carries the mapped precedent and omits it (null, no placeholder) when none is mapped', () => {
+    for (const v of VERDICTS) {
+      const view = verdictView(verdictRecord(v), feed);
+      const p = MUSEUM_PRECEDENTS[v.soc];
+      if (p) {
+        expect(view.precedent).toEqual({ url: museumExhibitUrl(p.exhibit), label: precedentHeadline(p), exhibitSlug: p.exhibit.slug });
+      } else {
+        expect(view.precedent, v.slug).toBeNull();
+      }
+    }
+    expect(precedentLink('43-4051')?.url).toBe('https://museumofextinctjobs.com/exhibits/switchboard-operator/');
+    expect(precedentLink('47-2111')).toBeNull();
+  });
+});
+
+describe.skipIf(!existsSync(museumSnapshot))('verdict obituary links resolve against the museum repo', () => {
+  type Snap = { verdicts: { soc: string; slug: string; title: string }[] };
+  let snapshot: Snap;
+  let exhibitSlugs: string[];
+  beforeAll(() => {
+    snapshot = JSON.parse(readFileSync(museumSnapshot, 'utf8')) as Snap;
+    const exhibits = readFileSync(museumExhibits, 'utf8');
+    const aiWing = readFileSync(museumAiWing, 'utf8');
+    exhibitSlugs = [...`${exhibits}\n${aiWing}`.matchAll(/^\s{4}slug: '([^']+)',\r?$/gm)].map((m) => m[1]);
+  });
+
+  it('the museum snapshot builds an obituary page for every Index verdict slug, for the same SOC', () => {
+    const bySlug = new Map(snapshot.verdicts.map((v) => [v.slug, v]));
+    expect(snapshot.verdicts).toHaveLength(VERDICTS.length);
+    const missing = VERDICTS.filter((v) => bySlug.get(v.slug)?.soc !== v.soc).map((v) => v.slug);
+    expect(missing).toEqual([]);
+  });
+
+  it('no museum exhibit slug shadows a living obituary slug', () => {
+    expect(exhibitSlugs.length).toBeGreaterThanOrEqual(33);
+    const verdictSlugs = new Set(VERDICTS.map((v) => v.slug));
+    expect(exhibitSlugs.filter((s) => verdictSlugs.has(s))).toEqual([]);
   });
 });
 

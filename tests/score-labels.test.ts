@@ -11,7 +11,7 @@ const root = join(__dirname, '..');
 const dist = join(root, 'dist');
 
 /** Wordings that pass a composite score or rank off as an exposure figure. */
-const MISLABELS = [
+export const MISLABELS = [
   /\b\d{1,3}\s*(\/|out of)\s*100\s*(AI[- ])?expos/i,
   /\b\d{1,3}\s*%\s*(AI[- ])?exposed\b/i,
   /#\s*\d+\s+(most\s+)?(AI[- ])?exposed\b/i,
