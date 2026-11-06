@@ -68,7 +68,7 @@ const sampleView = verdictView(sampleRecord, { edition: VERDICTS_META.edition, b
         <p id="job-hint" class="fine mt-2">{u.obsScored} occupations, matched on official titles plus O*NET alternate and reported titles. Arrow keys choose, Enter picks.</p>
         <p class="sr-only" role="status" aria-live="polite" data-job-status></p>
         <div class="name-row mt-3">
-          <label class="kicker" for="name-input">Put your first name in the paper <span class="name-opt">(optional, never leaves your device)</span></label>
+          <label class="kicker" for="name-input">Put your first name in the paper <span class="name-opt">(optional, stays in your browser and your share link)</span></label>
           <input id="name-input" class="name-input" type="text" maxlength={NAME_MAX * 3} autocomplete="given-name" aria-describedby="name-hint" data-name-input />
           <p id="name-hint" class="fine mt-1">Letters, spaces, hyphens, apostrophes and periods, up to {NAME_MAX} characters. <span data-name-echo aria-live="polite"></span></p>
         </div>

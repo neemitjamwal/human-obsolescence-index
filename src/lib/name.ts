@@ -22,10 +22,24 @@ export function sanitizeName(raw: unknown): string {
  * A name from a share link. Anything the sanitizer would have to change (markup, digits, over-long input) drops the
  * name entirely instead of printing a mangled one.
  */
-export function nameFromQuery(raw: string | null | undefined): string {
+export function nameFromLink(raw: string | null | undefined): string {
   if (typeof raw !== 'string' || raw.length > NAME_MAX * 2) return '';
   const name = sanitizeName(raw);
   return name && name === raw.normalize('NFC').replace(/[’‘`]/g, "'").replace(/\s+/g, ' ').trim() ? name : '';
+}
+
+/**
+ * The name from a share link's fragment (`#n=<encoded-name>`). Browsers never send the fragment in HTTP requests, so
+ * the name reaches only this page's script. A `?n=` query is deliberately ignored.
+ */
+export function nameFromHash(hash: string | null | undefined): string {
+  if (typeof hash !== 'string' || !hash.startsWith('#')) return '';
+  return nameFromLink(new URLSearchParams(hash.slice(1)).get('n'));
+}
+
+/** `#n=<encoded-name>`, or an empty string when there is no name. */
+export function nameFragment(name: string): string {
+  return name ? `#n=${encodeURIComponent(name)}` : '';
 }
 
 /** "Dave" -> "Dave's". */

@@ -4,7 +4,7 @@ import { ALL_COPY, BANNED_ROAST_PHRASES, HEADLINES, NAMED_HEADLINES, ROBOT_LINES
 import { CARD_SIZES, cardText } from '../src/lib/card';
 import { formatJobs, formatScore, formatSignedPercent, formatUsd } from '../src/lib/format';
 import { SCORE_BANDS } from '../src/lib/ledger';
-import { NAME_MAX, nameFromQuery, sanitizeName } from '../src/lib/name';
+import { NAME_MAX, nameFromHash, nameFromLink, nameFragment, sanitizeName } from '../src/lib/name';
 import { ROBOT_EYE, ROBOT_LABELS, ROBOT_POSES, ROBOT_POSE_BY_BAND, robotSvg } from '../src/lib/robots';
 import { verdictFeed } from '../src/lib/verdict-feed';
 import { DISCLAIMER_SHORT, sharePath, verdictView } from '../src/lib/verdict-view';
@@ -45,23 +45,41 @@ describe('first-name sanitizer', () => {
     expect(name.isWellFormed()).toBe(true);
     expect(sanitizeName('a'.repeat(20) + deseret)).toBe('a'.repeat(20));
     expect(() => sharePath('telemarketers', name)).not.toThrow();
-    expect(sharePath('telemarketers', name)).toBe(`/v/telemarketers/?n=${'a'.repeat(19)}%F0%90%90%80`);
-    expect(nameFromQuery(name)).toBe(name);
+    expect(sharePath('telemarketers', name)).toBe(`/v/telemarketers/#n=${'a'.repeat(19)}%F0%90%90%80`);
+    expect(nameFromLink(name)).toBe(name);
+    expect(nameFromHash(nameFragment(name))).toBe(name);
   });
 
   it('share links drop any name the sanitizer would have to change', () => {
-    expect(nameFromQuery('Dave')).toBe('Dave');
-    expect(nameFromQuery('Mary Jane')).toBe('Mary Jane');
-    expect(nameFromQuery('<img src=x onerror=alert(1)>')).toBe('');
-    expect(nameFromQuery('<script>')).toBe('');
-    expect(nameFromQuery('a'.repeat(200))).toBe('');
-    expect(nameFromQuery(null)).toBe('');
-    expect(nameFromQuery('')).toBe('');
+    expect(nameFromLink('Dave')).toBe('Dave');
+    expect(nameFromLink('Mary Jane')).toBe('Mary Jane');
+    expect(nameFromLink('<img src=x onerror=alert(1)>')).toBe('');
+    expect(nameFromLink('<script>')).toBe('');
+    expect(nameFromLink('a'.repeat(200))).toBe('');
+    expect(nameFromLink(null)).toBe('');
+    expect(nameFromLink('')).toBe('');
   });
 
-  it('share paths encode the name', () => {
+  it('share paths carry the name only in the URL fragment', () => {
     expect(sharePath('telemarketers')).toBe('/v/telemarketers/');
-    expect(sharePath('telemarketers', "Mary O'Neil")).toBe("/v/telemarketers/?n=Mary%20O'Neil");
+    expect(sharePath('telemarketers', "Mary O'Neil")).toBe("/v/telemarketers/#n=Mary%20O'Neil");
+    expect(sharePath('telemarketers', 'Dave')).not.toContain('?');
+    const url = new URL(sharePath('telemarketers', "Mary O'Neil"), 'https://humanobsolescenceindex.com');
+    expect(url.pathname + url.search).toBe('/v/telemarketers/');
+    expect(nameFromHash(url.hash)).toBe("Mary O'Neil");
+  });
+
+  it('restores names from the fragment only, never from ?n=', () => {
+    expect(nameFromHash('#n=Dave')).toBe('Dave');
+    expect(nameFromHash('#n=Zo%C3%AB')).toBe('Zoë');
+    expect(nameFromHash('#n=%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E')).toBe('');
+    expect(nameFromHash('#n=%3Cscript%3E')).toBe('');
+    expect(nameFromHash(`#n=${'a'.repeat(200)}`)).toBe('');
+    expect(nameFromHash('#n=%E0%A4%A')).toBe('');
+    expect(nameFromHash('?n=Dave')).toBe('');
+    expect(nameFromHash('')).toBe('');
+    expect(nameFromHash(null)).toBe('');
+    expect(nameFragment('')).toBe('');
   });
 });
 

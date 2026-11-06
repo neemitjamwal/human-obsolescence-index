@@ -1,6 +1,6 @@
 import { formatJobs, formatScore, formatSignedPercent, formatUsd } from './format';
 import { BAND_LABELS, type BlsCategory, type ScoreBand } from './ledger';
-import { possessive } from './name';
+import { nameFragment, possessive } from './name';
 import { SITE_DOMAIN } from './site';
 
 /** The verdict fields the reveal, the /v/ pages and the share cards print. Built at build time for every scored occupation. */
@@ -98,7 +98,7 @@ export function verdictView(v: VerdictRecord, feed: Pick<VerdictFeed, 'edition' 
   };
 }
 
-/** /v/<slug>/ plus ?n=<name> when a name is set. */
+/** /v/<slug>/ plus #n=<name> when a name is set. */
 export function sharePath(slug: string, name = ''): string {
-  return `/v/${slug}/${name ? `?n=${encodeURIComponent(name)}` : ''}`;
+  return `/v/${slug}/${nameFragment(name)}`;
 }
