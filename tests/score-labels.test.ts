@@ -58,6 +58,12 @@ const SOURCE_FILES = [
   'src/components/FightCard.astro',
   'src/pages/vs/index.astro',
   'src/pages/vs/[pair].astro',
+  'src/data/lineup.ts',
+  'src/lib/lineup.ts',
+  'src/lib/lineup-card.ts',
+  'src/lib/lineup-dom.ts',
+  'src/lib/lineup-page.ts',
+  'src/pages/office-lineup.astro',
 ];
 
 const plain = (html: string) =>

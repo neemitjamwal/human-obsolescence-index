@@ -6,7 +6,7 @@ import { VERDICTS, verdictPath, type Verdict } from './verdicts';
 export const DEFAULT_OG_IMAGE = '/og/index.png';
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 } as const;
 
-export const STATIC_PATHS = ['/', '/leaderboard/', '/vs/', '/methodology/', '/press/', '/changelog/', '/about/', '/embed/'];
+export const STATIC_PATHS = ['/', '/leaderboard/', '/vs/', '/office-lineup/', '/methodology/', '/press/', '/changelog/', '/about/', '/embed/'];
 
 export function ogImagePath(slug: string): string {
   return `/og/${slug}.png`;

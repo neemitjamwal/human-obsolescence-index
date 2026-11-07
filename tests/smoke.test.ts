@@ -7,14 +7,16 @@ import { categoryClass, clampScore, deltaDirection, deltaGlyph, formatDelta, sco
 const root = join(__dirname, '..');
 
 describe('site shell', () => {
-  it('names the index and exposes the six nav entries in order', () => {
+  it('names the index and exposes the seven nav entries in order', () => {
     expect(SITE_NAME).toBe('Human Obsolescence Index');
-    expect(NAV_ITEMS.map((i) => i.label)).toEqual(['Front page', 'Leaderboard', "Who's safer?", 'Methodology', 'Press', 'About']);
+    expect(NAV_ITEMS.map((i) => i.label)).toEqual(['Front page', 'Leaderboard', "Who's safer?", 'Office lineup', 'Methodology', 'Press', 'About']);
     for (const item of NAV_ITEMS) expect(item.href.startsWith('/')).toBe(true);
   });
 
   it('marks the active nav item by path', () => {
-    const [front, board, battle, methodology] = NAV_ITEMS;
+    const [front, board, battle, lineup, methodology] = NAV_ITEMS;
+    expect(isActive(lineup, '/office-lineup/')).toBe(true);
+    expect(isActive(lineup, '/vs/')).toBe(false);
     expect(isActive(battle, '/vs/')).toBe(true);
     expect(isActive(battle, '/vs/lawyers-vs-electricians/')).toBe(true);
     expect(isActive(battle, '/')).toBe(false);
@@ -33,6 +35,7 @@ describe('site shell', () => {
       '/': 'src/pages/index.astro',
       '/leaderboard/': 'src/pages/leaderboard.astro',
       '/vs/': 'src/pages/vs/index.astro',
+      '/office-lineup/': 'src/pages/office-lineup.astro',
       '/methodology/': 'src/pages/methodology.astro',
       '/press/': 'src/pages/press.astro',
       '/about/': 'src/pages/about.astro',

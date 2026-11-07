@@ -1,0 +1,167 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CiteLink from '../components/CiteLink.astro';
+import Robot from '../components/Robot.astro';
+import SharePanel from '../components/SharePanel.astro';
+import { LINEUP_FINE, LINEUP_STINGER } from '../data/lineup';
+import { MAX_COWORKERS, MIN_COWORKERS } from '../lib/lineup';
+import { VERDICTS_META } from '../lib/verdicts';
+
+const u = VERDICTS_META;
+const coworkers = Array.from({ length: MAX_COWORKERS }, (_, i) => i);
+---
+
+<BaseLayout
+  title="Office lineup: who do the robots pick first?"
+  description={`Put two to four coworkers, and the boss if you dare, in a police lineup. Each job's real Doom Score from ${u.count} scored occupations decides who the robots pick first. AI exposure is not job loss; every score links its receipts.`}
+  imageAlt="The Daily Doom: occupations ranked by Doom Score"
+>
+  <div data-lineup-page>
+    <section class="mx-auto max-w-6xl px-4 pt-8 md:px-6" aria-labelledby="ol-title">
+      <div class="lineup-hero">
+        <div>
+          <p class="eyebrow eyebrow-red">Police lineup · Robot witness on duty</p>
+          <h1 id="ol-title" class="page-h mt-3">Office <span class="hl">lineup</span></h1>
+          <p class="hero-dek mt-3">
+            <span>Put your coworkers in the lineup. The robots pick by real Doom Score, highest first. Nobody here did anything wrong.</span>
+          </p>
+        </div>
+        <div class="lineup-witness" aria-hidden="true">
+          <Robot pose="pointing" id="ol-witness" decorative class="lineup-witness-robot" />
+        </div>
+      </div>
+
+      <form class="lineup-form box-ink mt-5" aria-label="Build your office lineup" data-lineup-form novalidate>
+        <p class="fine lineup-form-note" id="ol-hint">
+          Two to four coworkers, plus the boss only if you add one. Names are optional and stay in your browser; arrow keys choose a job, Enter picks.
+        </p>
+        <ol class="lineup-slots mt-3" aria-label="Coworkers">
+          {
+            coworkers.map((i) => (
+              <li class="lineup-slot" data-slot={i} data-role="coworker" hidden={i >= MIN_COWORKERS}>
+                <fieldset class="slot-fields">
+                  <legend class="slot-tag">Coworker {i + 1}</legend>
+                  <label class="slot-label" for={`ol-job-${i}`}>Job</label>
+                  <div class="job-combo">
+                    <input
+                      id={`ol-job-${i}`}
+                      class="job-input slot-input"
+                      type="text"
+                      role="combobox"
+                      aria-autocomplete="list"
+                      aria-expanded="false"
+                      aria-controls={`ol-list-${i}`}
+                      aria-describedby="ol-hint"
+                      autocomplete="off"
+                      autocapitalize="off"
+                      spellcheck="false"
+                      placeholder={['e.g. accountant', 'e.g. cashier', 'e.g. web developer', 'e.g. receptionist'][i]}
+                      data-slot-job
+                    />
+                    <ul id={`ol-list-${i}`} class="job-list" role="listbox" aria-label={`Matching jobs for coworker ${i + 1}`} hidden data-slot-list></ul>
+                  </div>
+                  <label class="slot-label mt-2" for={`ol-name-${i}`}>First name <span class="name-opt">(optional)</span></label>
+                  <input
+                    id={`ol-name-${i}`}
+                    class="name-input"
+                    type="text"
+                    maxlength="60"
+                    autocomplete="off"
+                    autocapitalize="words"
+                    spellcheck="false"
+                    data-slot-name
+                  />
+                  {i >= MIN_COWORKERS && (
+                    <button type="button" class="btn slot-remove mt-3" data-slot-remove>
+                      Remove coworker {i + 1}
+                    </button>
+                  )}
+                </fieldset>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="lineup-boss mt-4" data-slot={MAX_COWORKERS} data-role="boss" hidden>
+          <fieldset class="slot-fields">
+            <legend class="slot-tag slot-tag-boss">The boss (optional)</legend>
+            <label class="slot-label" for="ol-job-boss">Boss's job</label>
+            <div class="job-combo">
+              <input
+                id="ol-job-boss"
+                class="job-input slot-input"
+                type="text"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls="ol-list-boss"
+                aria-describedby="ol-hint"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                placeholder="e.g. general manager"
+                data-slot-job
+              />
+              <ul id="ol-list-boss" class="job-list" role="listbox" aria-label="Matching jobs for the boss" hidden data-slot-list></ul>
+            </div>
+            <label class="slot-label mt-2" for="ol-name-boss">Boss's first name <span class="name-opt">(optional)</span></label>
+            <input id="ol-name-boss" class="name-input" type="text" maxlength="60" autocomplete="off" autocapitalize="words" spellcheck="false" data-slot-name />
+            <button type="button" class="btn slot-remove mt-3" data-remove-boss>Remove the boss</button>
+          </fieldset>
+        </div>
+        <div class="lineup-adders mt-4">
+          <button type="button" class="btn" data-add-coworker>+ Add a coworker</button>
+          <button type="button" class="btn" data-add-boss>+ Add the boss (optional)</button>
+        </div>
+        <div class="battle-go-row mt-4">
+          <button type="submit" class="btn btn-yellow battle-go">Line them up</button>
+          <p class="fine">{u.count} scored occupations, same matching as the front page. The same job can appear more than once.</p>
+        </div>
+        <p class="sr-only" role="status" aria-live="polite" data-lineup-status></p>
+      </form>
+    </section>
+
+    <section class="mx-auto max-w-6xl px-4 pt-8 md:px-6" aria-label="The lineup" hidden data-lineup-zone>
+      <article class="lineup-result box" aria-labelledby="ol-result-h" data-lineup>
+        <p class="verdict-stinger lineup-stinger">{LINEUP_STINGER}</p>
+        <h2 id="ol-result-h" class="lineup-h mt-3"><span data-lf="headline"></span></h2>
+        <p class="lineup-sub mt-1" data-lf="subhead"></p>
+        <div class="lineup-wall mt-4">
+          <ol class="lineup-list" aria-label="The lineup, highest Doom Score first" data-lineup-list></ol>
+        </div>
+        <figure class="lineup-robot mt-5">
+          <Robot pose="pointing" id="ol-result-robot" decorative class="lineup-robot-art" />
+          <figcaption class="bubble"><span class="sr-only">The witness robot says: </span><span data-lf="robotLine"></span></figcaption>
+        </figure>
+        <p class="roast lineup-quip mt-4" data-lf="quip"></p>
+        <p class="kicker mt-3" data-lf="scoreLine"></p>
+        <p class="fine lineup-fine mt-3" data-disclaimer>
+          <span data-lf="fine">{LINEUP_FINE}</span>
+          {' '}<a href="/methodology/" class="font-bold">How the Doom Score works →</a>
+        </p>
+        <p class="kicker mt-2">
+          Sources: <CiteLink id="hoi-composite" /> · <CiteLink id="bls-ep" /> · <CiteLink id="msft-ai-applicability" /> ·
+          {' '}<CiteLink id="openai-gpts-are-gpts" />
+        </p>
+      </article>
+      <div class="mt-8"><SharePanel title="Post the lineup" idPrefix="ol-share" /></div>
+    </section>
+  </div>
+
+  <section class="mx-auto mt-12 max-w-6xl border-t-[6px] border-double border-ink px-4 pt-8 md:px-6" aria-labelledby="ol-how">
+    <h2 id="ol-how" class="section-h">How the <span class="hl-red">lineup</span> works</h2>
+    <ul class="prose-block mt-3 list-disc space-y-2 pl-5">
+      <li>Every role is a real occupation from the Index, with the same Doom Score you see on its verdict page.</li>
+      <li>The lineup sorts by Doom Score, highest first. Equal scores share a spot: the robots do not invent a difference.</li>
+      <li>The boss is left out unless you add one, and is ranked by exactly the same rule as everyone else.</li>
+      <li>Names never leave your browser. They ride only in the part of the link after <code>#</code>, which browsers do not send to any server; anyone you share the link with can still read them.</li>
+    </ul>
+    <p class="fine mt-4">AI exposure ≠ job loss. A Doom Score ranks tasks and projections, not people. <a href="/methodology/" class="font-bold">How we score it</a></p>
+  </section>
+</BaseLayout>
+
+<script>
+  import { initLineupPage } from '../lib/lineup-page';
+
+  const page = document.querySelector<HTMLElement>('[data-lineup-page]');
+  if (page) initLineupPage(page);
+</script>

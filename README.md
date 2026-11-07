@@ -24,6 +24,7 @@ If your system Node is older, run each command through a temporary Node, for exa
 | `/` | Front page: the "Type your job" combobox and optional first name, the verdict reveal and share panel, the hall of shame (top 20) and the "Who's safer?" teaser |
 | `/v/<slug>/` | A static verdict page for every scored occupation (784), with receipts, a 1200×630 OG card, a "Read its obituary" link to the museum and, where one is mapped, a "Historical precedent" link to a museum exhibit |
 | `/vs/` and `/vs/<a>-vs-<b>/` | "Who's safer?": a two-combobox battle (`/vs/?a=<slug>&b=<slug>`) plus 40 curated static fights with OG cards |
+| `/office-lineup/` | "Office lineup": a police lineup of two to four coworkers plus an optional boss, each a real occupation (the same job may repeat), ranked by Doom Score with honest ties and receipts links. Share links look like `/office-lineup/?c=<slug>,<slug>&boss=<slug>#n=<name>,<name>,,<boss name>`: optional first names live only in the `#n=` fragment, so they are never sent to the server, stored, or rendered at build time. Story and post cards are drawn in the browser |
 | `/leaderboard/` | The full ranked board of 120 |
 | `/occupations/<slug>/` | The full file for each of the 152 published occupations |
 | `/methodology/`, `/press/`, `/changelog/`, `/about/`, `/embed/` | Methodology with BLS limits quoted verbatim, press stat pack, edition log, credits, and the iframe widget |
@@ -66,7 +67,7 @@ The result lists violations as `[id, impact, nodeCount]`; the budget is an empty
 
 - `scripts/build-index.mjs` and `scripts/lib/`: the pipeline (`config` pins, `download`, `zip`, `parse`, `join`, `score`, `select`, `emit`).
 - `src/data/occupations.json`, `src/data/sources.json`: generated and committed. Every field is `{ value, sourceId }`.
-- `src/pages/index.astro` (front page), `src/pages/leaderboard.astro`, `src/pages/occupations/[slug].astro` (one page per published occupation), `src/pages/vs/` (battles), `methodology`, `press`, `changelog`, `about`, `embed`.
+- `src/pages/index.astro` (front page), `src/pages/leaderboard.astro`, `src/pages/occupations/[slug].astro` (one page per published occupation), `src/pages/vs/` (battles), `src/pages/office-lineup.astro` (office lineup: logic in `src/lib/lineup.ts`, DOM in `lineup-dom.ts`/`lineup-page.ts`, cards in `lineup-card.ts`, copy in `src/data/lineup.ts`), `methodology`, `press`, `changelog`, `about`, `embed`.
 - `art/`: the original robot-uprising art (never deployed). `scripts/art.mjs` writes the responsive AVIF/WebP copies to `public/art/`.
 - `launch/LAUNCH-KIT.md`: the launch and distribution kit (Show HN, Reddit, X, LinkedIn, Product Hunt, 10 short-video hooks, press pitches, a 14-day schedule). Every number in it is listed in its stat ledger and checked against the data by `tests/launch-kit.test.ts`; edit the ledger whenever the kit's copy changes, and re-check it after each new edition.
 - `src/pages/index.astro` hero, `src/lib/hero.ts`: the "Type your job" combobox, which fetches `/data/search-index.json` and `/data/verdicts.json` on first focus. `src/pages/v/[slug].astro`: a static verdict page for every scored occupation. `src/components/VerdictPanel.astro`, `src/lib/verdict-dom.ts`: the verdict and its reveal. `src/components/SharePanel.astro`, `src/lib/share-panel.ts`, `src/lib/card.ts`: the canvas share cards (1080×1920 and 1200×630) and Download / Share / Copy link. `src/data/roasts.ts`: the robot-uprising copy bank. `src/lib/robots.ts`: the cartoon SVG robots.
@@ -106,7 +107,7 @@ The pipeline never publishes a partial or silently wrong index. `npm run build:i
 ## Content rules
 
 - Every number displayed on any page resolves to a `sourceId` in `sources.json` (test- and verify-enforced). Joins use SOC 2018 codes, never titles.
-- Exposure is never presented as job loss. "AI exposure ≠ job loss" appears next to every verdict, battle and occupation result (share cards carry the site URL instead), and BLS's interpretation limits are quoted verbatim on the methodology page, along with Microsoft's out-of-scope warning.
+- Exposure is never presented as job loss. "AI exposure ≠ job loss" appears next to every verdict, battle, office lineup and occupation result (share cards carry the site URL instead), and BLS's interpretation limits are quoted verbatim on the methodology page, along with Microsoft's out-of-scope warning.
 - The official BLS category is always shown beside the OBS score and attributed to BLS.
 - The headline number is the Doom Score (OBS). It is never labeled "exposure"; the separate AI exposure percentile is labeled as such (test-enforced).
 - Robot-uprising copy (`src/data/roasts.ts`) may panic but carries no invented numbers, dates, predictions or quotes; roasts interpolate only real fields; the robots are the villains, never the worker.

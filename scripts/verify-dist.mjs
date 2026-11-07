@@ -514,7 +514,17 @@ shameRows.forEach((m, i) => {
 if (!shameSection.includes('href="/leaderboard/"')) failures.push('hall of shame does not link /leaderboard/');
 if ((shameSection.match(/data-robot-pose="/g) ?? []).length < 3) failures.push('hall of shame shows fewer than 3 robot poses');
 if (!frontPage.includes('data-battle-teaser') || !frontPage.includes('href="/vs/"')) failures.push('front page has no battle teaser linking /vs/');
-// ---- Home hero: combobox, lazy data, initial JS budget ----
+// ---- /office-lineup/: standalone page, nav link, sitemap, disclaimer outside the card, no server-rendered names ----
+const lineupPage = readDist('office-lineup/index.html');
+if (!lineupPage) failures.push('dist/office-lineup/index.html is missing');
+else {
+  if (!lineupPage.includes('data-lineup-form') || !lineupPage.includes('data-lineup-list')) failures.push('/office-lineup/ has no lineup form or result list');
+  if ((lineupPage.match(/role="combobox"/g) ?? []).length !== 5) failures.push('/office-lineup/ does not render four coworker and one boss job comboboxes');
+  if (!/data-disclaimer[\s\S]{0,400}AI exposure ≠ job loss/.test(lineupPage)) failures.push('/office-lineup/ has no exposure-is-not-job-loss disclaimer next to the result');
+  if (/#n=|[?&]n=/.test(lineupPage)) failures.push('/office-lineup/ server-renders a name fragment or name query');
+}
+if (!frontPage.includes('href="/office-lineup/"')) failures.push('front page navigation does not link /office-lineup/');
+if (!sitemapUrls.includes(`${SITE}/office-lineup/`)) failures.push('sitemap.xml does not list /office-lineup/');// ---- Home hero: combobox, lazy data, initial JS budget ----
 if (!/role="combobox"/.test(frontPage) || !/aria-controls="[^"]+"/.test(frontPage)) failures.push('front page has no ARIA combobox job search');
 if (frontPage.includes('data-verdict-feed=') || /"verdicts":\[/.test(frontPage)) failures.push('front page inlines the verdict feed instead of fetching it lazily');
 if (!readDist('data/verdicts.json')) failures.push('dist/data/verdicts.json is missing');
@@ -557,6 +567,6 @@ console.log(
     `(${(cssBytes / 1024).toFixed(1)} KB) with all Daily Doom tokens and no v1 tokens, ticker + hero slot on home, ledger on /leaderboard/, no localhost URLs; ` +
     `${occupationPages} occupation pages with all components (${citationLinks} citation links, all resolving to sources.json), ` +
     `${precedentLinks} museum precedent links, embed widget with ${embedEntriesCount} occupations, ${rankedRows.length} leaderboard rows in data order, ${homeRows.length} rows keyed by OBS band (5 band filter buttons), ${growthNotes} high-band growth notes (${growthBranches.stronger} stronger-growth, ${growthBranches.weaker} weaker-growth), stat pack (top-50 CSV + sources.json) present, methodology/press/changelog checks passed; ` +
-    `search index ${(searchIndexGzip / 1024).toFixed(1)} KB gzip; ${verdictPages} /v/ verdict pages + ${ogVerdictCards} verdict OG cards (${obituaryLinks} museum obituary links, ${verdictPrecedentLinks} museum precedent links); ${battlePages} /vs/ battle pages + ${ogBattleCards} battle OG cards, hall of shame top ${shameRows.length}; front page initial JS ${(homeJsGzip / 1024).toFixed(1)} KB gzip; ${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
+    `search index ${(searchIndexGzip / 1024).toFixed(1)} KB gzip; ${verdictPages} /v/ verdict pages + ${ogVerdictCards} verdict OG cards (${obituaryLinks} museum obituary links, ${verdictPrecedentLinks} museum precedent links); ${battlePages} /vs/ battle pages + ${ogBattleCards} battle OG cards, hall of shame top ${shameRows.length}; /office-lineup/ with nav link, sitemap entry and disclaimer; front page initial JS ${(homeJsGzip / 1024).toFixed(1)} KB gzip; ${ogImages} pages with share meta (${checkedImages.size} distinct 1200x630 PNG cards), sitemap ${sitemapUrls.length} URLs, robots.txt, ` +
     `${textFiles.length} text files free of localhost/127.0.0.1, red-list sources only as cite-only links, licensing credits on /about/`,
 );

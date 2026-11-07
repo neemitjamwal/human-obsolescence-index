@@ -9,6 +9,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Front page', href: '/' },
   { label: 'Leaderboard', href: '/leaderboard/' },
   { label: "Who's safer?", href: '/vs/' },
+  { label: 'Office lineup', href: '/office-lineup/' },
   { label: 'Methodology', href: '/methodology/' },
   { label: 'Press', href: '/press/' },
   { label: 'About', href: '/about/' },
