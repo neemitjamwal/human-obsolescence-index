@@ -13,13 +13,19 @@ import {
 } from '../data/lineup.ts';
 import { hashKey } from '../data/roasts.ts';
 import type { ScoreBand } from './ledger';
-import { nameFromLink, sanitizeName } from './name.ts';
+import { NAME_MAX, nameFromLink, sanitizeName } from './name.ts';
 
 export const MIN_COWORKERS = 2;
 export const MAX_COWORKERS = 4;
 export const LINEUP_PATH = '/office-lineup/';
-/** Longest `#n=` fragment we will read: five worst-case encoded names plus separators. Anything longer is dropped. */
-export const MAX_NAME_FRAGMENT = 600;
+/** Percent-encoding of one code point outside the BMP: four UTF-8 bytes, each written as `%XX`. */
+const MAX_ENCODED_PER_CODE_POINT = 12;
+/**
+ * Longest `#n=` fragment we will read: every slot holding a NAME_MAX name in worst-case encoding, plus the prefix and
+ * separators. Anything longer is dropped.
+ */
+export const MAX_NAME_FRAGMENT =
+  '#n='.length + (MAX_COWORKERS + 1) * NAME_MAX * MAX_ENCODED_PER_CODE_POINT + MAX_COWORKERS;
 const MAX_SLUG = 120;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -195,12 +201,14 @@ function rawNames(hash: string): string[] | null {
 /** Reads a lineup link. Slugs come from the query, names only from the `#n=` fragment; a `?n=` query is ignored. */
 export function parseLineupLink(search: string, hash: string): LineupLink {
   const q = new URLSearchParams(search);
-  const listed = (q.get('c') ?? '').split(',').filter((s) => s !== '');
-  const extraDropped = listed.length > MAX_COWORKERS;
-  const coworkerSlugs = listed.slice(0, MAX_COWORKERS).map(cleanSlug);
+  const c = q.get('c') ?? '';
+  // Names pair with positions in `c`, empty entries included, so a stray comma cannot hand a name to someone else.
+  const positions = c === '' ? [] : c.split(',');
+  const listed = positions.filter((s) => s !== '').length;
+  const extraDropped = listed > MAX_COWORKERS;
   const bossRaw = q.get('boss');
   const bossSlug = bossRaw == null || bossRaw === '' ? undefined : cleanSlug(bossRaw);
-  const slotCount = coworkerSlugs.length + (bossSlug === undefined ? 0 : 1);
+  const slotCount = positions.length + (bossSlug === undefined ? 0 : 1);
 
   let names: string[] = [];
   let namesDropped = false;
@@ -209,9 +217,15 @@ export function parseLineupLink(search: string, hash: string): LineupLink {
   else if (raw && (raw.length > slotCount || extraDropped)) namesDropped = raw.some((r) => r !== '');
   else if (raw) names = raw.map((r) => nameFromLink(safeDecode(r)));
 
+  const coworkers = positions
+    .map((s, i) => ({ s, name: names[i] ?? '' }))
+    .filter(({ s }) => s !== '')
+    .slice(0, MAX_COWORKERS)
+    .map(({ s, name }) => ({ slug: cleanSlug(s), name }));
+
   return {
-    coworkers: coworkerSlugs.map((slug, i) => ({ slug, name: names[i] ?? '' })),
-    boss: bossSlug === undefined ? null : { slug: bossSlug, name: names[coworkerSlugs.length] ?? '' },
+    coworkers,
+    boss: bossSlug === undefined ? null : { slug: bossSlug, name: names[positions.length] ?? '' },
     extraDropped,
     namesDropped,
   };

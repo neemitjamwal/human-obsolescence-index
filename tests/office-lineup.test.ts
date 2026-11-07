@@ -17,6 +17,7 @@ import {
   type LineupSlot,
 } from '../src/lib/lineup';
 import { lineupCardAlt, lineupCardFileName, lineupCardText } from '../src/lib/lineup-card';
+import { NAME_MAX, sanitizeName } from '../src/lib/name';
 import { NAV_ITEMS } from '../src/lib/site';
 import { sitePaths } from '../src/lib/seo';
 import { SITE_DOMAIN } from '../src/lib/site';
@@ -243,6 +244,105 @@ describe('share links', () => {
   });
 });
 
+describe('share links at the name limit', () => {
+  const people = (names: string[]) => [
+    cw('cashiers', names[0]),
+    cw('lawyers', names[1]),
+    cw('cashiers', names[2]),
+    cw('telemarketers', names[3]),
+    boss('chief-executives', names[4]),
+  ];
+  const run = (from: number, to: number, offset: number) =>
+    Array.from({ length: NAME_MAX }, (_, j) => String.fromCodePoint(from + ((offset * 7 + j) % (to - from + 1)))).join('');
+  const greek = [0, 1, 2, 3, 4].map((i) => run(0x3b1, 0x3c9, i));
+  const astral = [0, 1, 2, 3, 4].map((i) => run(0x10400, 0x1044f, i));
+
+  for (const [label, names] of [
+    ['Greek', greek],
+    ['astral-plane', astral],
+  ] as const) {
+    it(`restores five distinct ${NAME_MAX}-letter ${label} names with their roles, slugs and boss`, () => {
+      expect(new Set(names).size).toBe(5);
+      for (const n of names) {
+        expect(Array.from(n)).toHaveLength(NAME_MAX);
+        expect(sanitizeName(n)).toBe(n);
+      }
+      const slots = people(names);
+      const path = lineupPath(slots.map((s) => ({ role: s.role, slug: s.pick.slug, name: s.name })));
+      const url = new URL(path, 'https://humanobsolescenceindex.com');
+      for (const n of names) expect(url.search).not.toContain(encodeURIComponent(n));
+      expect(url.hash.length).toBeLessThanOrEqual(MAX_NAME_FRAGMENT);
+      const link = parseLineupLink(url.search, url.hash);
+      expect(link.namesDropped).toBe(false);
+      expect(link.boss).toEqual({ slug: 'chief-executives', name: names[4] });
+      const resolved = resolveLineup(link, bySlug);
+      expect(resolved.ready).toBe(true);
+      expect(resolved.dropped).toBe(0);
+      expect(resolved.slots.map((s) => [s.role, s.pick.slug, s.name])).toEqual(slots.map((s) => [s.role, s.pick.slug, s.name]));
+      expect(lineupView(resolved.slots).entries).toEqual(lineupView(slots).entries);
+      expect(lineupCardText(lineupView(resolved.slots), '2026-Q4')).toEqual(lineupCardText(lineupView(slots), '2026-Q4'));
+    });
+  }
+
+  it('bounds the fragment by the worst-case encoding of five full names', () => {
+    const worst = `#n=${Array.from({ length: MAX_COWORKERS + 1 }, () => encodeURIComponent(String.fromCodePoint(0x10400).repeat(NAME_MAX))).join(',')}`;
+    expect(worst.length).toBe(MAX_NAME_FRAGMENT);
+    const over = parseLineupLink('?c=lawyers,cashiers', `#n=Ana,Bo,${'%F0%90%90%80'.repeat(MAX_NAME_FRAGMENT)}`);
+    expect(over.namesDropped).toBe(true);
+    expect(over.coworkers.map((s) => s.name)).toEqual(['', '']);
+  });
+});
+
+describe('share links with empty occupation positions', () => {
+  it('keeps each name with its own position when an occupation entry is empty', () => {
+    const link = parseLineupLink('?c=,cashiers,lawyers', '#n=,Bo');
+    expect(link.namesDropped).toBe(false);
+    expect(link.coworkers).toEqual([
+      { slug: 'cashiers', name: 'Bo' },
+      { slug: 'lawyers', name: '' },
+    ]);
+    const r = resolveLineup(link, bySlug);
+    expect(r.slots.map((s) => [s.role, s.pick.slug, s.name])).toEqual([
+      ['coworker', 'cashiers', 'Bo'],
+      ['coworker', 'lawyers', ''],
+    ]);
+  });
+
+  it('discards a name paired with an empty position instead of moving it', () => {
+    const link = parseLineupLink('?c=cashiers,,lawyers', '#n=Ana,Ghost,Cy');
+    expect(link.coworkers).toEqual([
+      { slug: 'cashiers', name: 'Ana' },
+      { slug: 'lawyers', name: 'Cy' },
+    ]);
+  });
+
+  it('keeps the boss name at the boss position after empty occupation entries', () => {
+    const trailing = parseLineupLink('?c=cashiers,lawyers,&boss=chief-executives', '#n=Ana,Bo,,Pat');
+    expect(trailing.coworkers.map((s) => s.name)).toEqual(['Ana', 'Bo']);
+    expect(trailing.boss).toEqual({ slug: 'chief-executives', name: 'Pat' });
+    const leading = parseLineupLink('?c=,cashiers,lawyers&boss=chief-executives', '#n=,Bo,Cy,Pat');
+    expect(leading.coworkers.map((s) => [s.slug, s.name])).toEqual([
+      ['cashiers', 'Bo'],
+      ['lawyers', 'Cy'],
+    ]);
+    expect(leading.boss).toEqual({ slug: 'chief-executives', name: 'Pat' });
+    const bossOnlyName = parseLineupLink('?c=,cashiers,lawyers&boss=chief-executives', '#n=,,,Pat');
+    expect(bossOnlyName.coworkers.map((s) => s.name)).toEqual(['', '']);
+    expect(bossOnlyName.boss?.name).toBe('Pat');
+    expect(resolveLineup(bossOnlyName, bySlug).slots.find((s) => s.role === 'boss')?.name).toBe('Pat');
+  });
+
+  it('a missing or empty c still means no coworkers', () => {
+    for (const search of ['?boss=chief-executives', '?c=&boss=chief-executives']) {
+      const link = parseLineupLink(search, '#n=Pat');
+      expect(link.coworkers).toEqual([]);
+      expect(link.boss).toEqual({ slug: 'chief-executives', name: 'Pat' });
+      expect(link.namesDropped).toBe(false);
+      expect(resolveLineup(link, bySlug).ready).toBe(false);
+    }
+    expect(parseLineupLink('?c=', '').coworkers).toEqual([]);
+  });
+});
 describe('lineup copy and cards', () => {
   it('carries no numbers, predictions or real names, and never mocks workers', () => {
     for (const text of ALL_LINEUP_COPY) {
